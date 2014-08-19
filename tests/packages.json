@@ -1,0 +1,26 @@
+[
+{
+    "name":    "packaging",
+    "author":  "Matt Bierbaum",
+    "desc":    "Installs package that supports pep440 versioning",
+    "type":    "python",
+    "version": "14.0",
+    "date":    "2014-08-18 22:19:48",
+    "requires": {},
+    "data":    {
+        "url": "git+https://github.com/pypa/packaging@pep440"
+    }
+},
+{
+    "name":    "pyclj",
+    "author":  "Matt Bierbaum",
+    "desc":    "Installs the EDN reader with unicode support",
+    "type":    "python",
+    "version": "0.2.2",
+    "date":    "2014-08-18 22:09:58",
+    "requires": {},
+    "data":  {
+        "url": "git+https://github.com/sunng87/pyclj@a35bc0db"
+    }
+}
+]
