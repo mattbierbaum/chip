@@ -5,7 +5,7 @@
     "desc":    "Installs package that supports pep440 versioning",
     "type":    "python",
     "version": "14.0",
-    "date":    "2014-08-18 22:19:48",
+    "date":    "2014-08-18",
     "requires": {},
     "data":    {
         "url": "git+https://github.com/pypa/packaging@pep440"
@@ -17,10 +17,59 @@
     "desc":    "Installs the EDN reader with unicode support",
     "type":    "python",
     "version": "0.2.2",
-    "date":    "2014-08-18 22:09:58",
+    "date":    "2014-08-18",
     "requires": {},
     "data":  {
         "url": "git+https://github.com/sunng87/pyclj@a35bc0db"
     }
+},
+{
+    "name":    "bottle",
+    "author":  "Matt Bierbaum",
+    "desc":    "Install bottle, the simple web server",
+    "type":    "python",
+    "version": "0.11.6",
+    "date":    "2014-08-19",
+    "data": {
+        "url": "git+https://github.com/defnull/bottle.git@b8ad3a5a0f"
+    },
+    "requires": {}
+},
+{
+    "name":  "ASE",
+    "author": "Matt Bierbaum",
+    "desc": "Atomic Simulation Environment",
+    "type": "python",
+    "version": "3.6.0",
+    "date": "2014-08-19",
+    "data": {
+        "url": "http://pipeline.openkim.org/packages/ase/python-ase-3.6.0.2515.tar.gz"
+    },
+    "requires": {
+        "openkim-python": "~= 0.9.0" 
+    }
+},
+{
+    "name":  "openkim-python",
+    "author": "Matt Bierbaum",
+    "desc": "Atomic Simulation Environment",
+    "type": "python",
+    "version": "0.9.0",
+    "date": "2014-08-19",
+    "data": {
+        "url": "git+https://github.com/woosong/openkim-python.git@359d27e"
+    },
+    "requires": {
+        "kim-api": "~= 1.6.0"
+    }
+},
+{
+    "name": "kim-api",
+    "author": "Matt Bierbaum",
+    "desc": "The official KIM API release",
+    "type": "kimapi",
+    "version": "1.6.3",
+    "date": "2014-08-19",
+    "requires": {}
 }
 ]
