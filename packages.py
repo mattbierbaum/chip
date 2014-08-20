@@ -47,6 +47,7 @@ import shutil
 import urllib
 import subprocess
 import functools
+import tarfile
 from contextlib import contextmanager, nested
 from packaging.version import Version, Specifier
 
@@ -206,12 +207,15 @@ class Package(object):
 
         if self.url:
             dl = self.url
+            outname = join(self.base_path, self.fullname)
+            untarname = outname+"untar"
             urllib.urlretrieve(self.url, outname)
 
             tar = tarfile.open(outname)
             tar.extractall(path=untarname)
             tar.close()
 
+            os.remove(outname)
             shutil.rmtree(self.build_path)
             shutil.copytree(untarname, self.build_path)
             shutil.rmtree(untarname)
@@ -384,7 +388,7 @@ class PythonPackage(Package):
 
 class BinaryPackage(Package):
     def __init__(self, *args, **kwargs):
-        super(PythonPackage, self).__init__(*args, **kwargs)
+        super(BinaryPackage, self).__init__(*args, **kwargs)
 
         if self.data:
             self.linkname = self.data.get('linkname')
@@ -393,7 +397,7 @@ class BinaryPackage(Package):
     def install(self):
         exe = None
         for f in os.listdir(self.build_path):
-            full = join(f, self.build_path)
+            full = join(self.build_path, f)
             if os.access(full, os.X_OK):
                 exe = full
                 break
@@ -417,8 +421,9 @@ class KIMAPIPackage(Package):
 
     @wrap_install
     def install(self):
-        with self.indir(self.build_path):
-            self.run(["make"])
+        pass
+        #with self.indir(self.build_path):
+        #    self.run(["make"])
 
 class APTPackage(Package):
     pass

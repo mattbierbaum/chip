@@ -46,7 +46,8 @@
         "url": "http://pipeline.openkim.org/packages/ase/python-ase-3.6.0.2515.tar.gz"
     },
     "requires": {
-        "openkim-python": "~= 0.9.0" 
+        "kimcalculator": "~= 0.9",
+        "openkim-python": "~= 0.9"
     }
 },
 {
@@ -59,9 +60,19 @@
     "data": {
         "url": "git+https://github.com/woosong/openkim-python.git@359d27e"
     },
-    "requires": {
-        "kim-api": "~= 1.6.0"
-    }
+    "requires": { "kim-api": "~= 1.6.0" }
+},
+{
+    "name": "kimcalculator",
+    "author": "Matt Bierbaum",
+    "desc": "KIM Calculator for Python ASE interface to KIM",
+    "type": "python",
+    "version": "0.9.0",
+    "date": "2014-08-20",
+    "data": {
+        "url": "git+https://github.com/mattbierbaum/openkim-kimcalculator-ase.git@83366f5"
+    },
+    "requires": { "openkim-python": "~= 0.9" }
 },
 {
     "name": "kim-api",
@@ -71,5 +82,27 @@
     "version": "1.6.3",
     "date": "2014-08-19",
     "requires": {}
+},
+{
+    "name": "lammps-serial",
+    "author": "Matt Bierbaum",
+    "desc": "LAMMPS built serially for KIM",
+    "type": "binary",
+    "version": "1.6.0",
+    "date": "2014-08-20",
+    "url": "http://pipeline.openkim.org/packages/lammps/lammps_serial_kim.20140806.tar.gz",
+    "data": { "linkname": "lammps-serial" },
+    "requires": { "kim-api": "~= 1.6" }
+},
+{
+    "name": "minimol",
+    "author": "Matt Bierbaum",
+    "desc": "MiniMol build for the KIM API",
+    "type": "binary",
+    "version": "1.6.0",
+    "date": "2014-08-20",
+    "url": "http://pipeline.openkim.org/packages/minimol/minimol-kim-1.6-20140811.tar.gz",
+    "data": { "linkname": "minimol" },
+    "requires": { "kim-api": "~= 1.6" }
 }
 ]
