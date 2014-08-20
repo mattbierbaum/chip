@@ -84,9 +84,9 @@
     "url": "git+https://github.com/openkim/kim-api.git@f87d222",
     "data": {
         "build-commands": [
-            "make KIM_DIR=$build_path prefix=$install_path",
-            "make KIM_DIR=$build_path prefix=$install_path install",
-            "make KIM_DIR=$build_path prefix=$install_path install-set-default-to-v1"
+            "make ",
+            "make install",
+            "make install-set-default-to-v1"
         ]
     },
     "requires": {}

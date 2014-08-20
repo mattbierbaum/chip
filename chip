@@ -15,37 +15,26 @@ def unique(seq):
 # these are the main actions that can be run
 # args are interpreted starting in these functions
 #========================================================
-def action_build():
-    print "Building all packages..."
-    kimapi.make_all()
+def action_install(args):
+    pk = packages.pkg_obj(args['package-name'])
+    if pk.isinstalled():
+        print "Package %s already installed." % pk
+    pk.install()
 
-def action_install(args, dobuild=True):
-    for s in search(args):
-        install(s, args['force'])
+def action_activate(args):
+    pk = packages.pkg_obj(args['package-name'])
+    if pk.isinstalled():
+        pk.activate()
+        print os.environ['PATH']
+    else:
+        print "Package %s not installed, please install" % pk
 
-        if dobuild:
-            build_obj(s)
-
-def action_download(args):
-    for s in search(args):
-        download(s, compression=args.get('compression'))
-
-def action_search(args):
-    for s in search(args):
-        if isinstance(s, basestring):
-            print s
-        else:
-            print json.dumps(s, indent=4)
-
-def action_remove(args):
-    for s in args.get('packages'):
-        path = local_search(s)
-
-        if path:
-            print "Permanently deleting %s ..." % s
-            shutil.rmtree(path)
-        else:
-            print "KIM object not found: %s" % s
+def action_deactivate(args):
+    pk = packages.pkg_obj(args['package-name'])
+    if pk.isinstalled():
+        pk.deactivate()
+    else:
+        print "Package %s not installed, please install" % pk
 
 #========================================================
 # main : argparse and interpreting user interaction
@@ -64,47 +53,45 @@ if __name__ == "__main__":
 
     # shared arguments between most of the actions
     shared = argparse.ArgumentParser(add_help=False)
-    shared.add_argument("-t", "--type", type=str, default='',
-        help="""KIM object type shortname two letter codes. \n
-            te = test, td = test driver, mo = model
-            md = model driver, rd = reference data
-            vt = verification test, vm = verification model
-            tr = test result, vr = verification result
-        """
+    shared.add_argument("-v", "--versbose", action='store_true',
+        help="Sets the verbosity level of the chip utility"
     )
-    shared.add_argument("-d", "--desc", type=str, default='',
-        help="filter by search terms in the object description")
-    shared.add_argument("-v", "--version", type=str, default='', metavar='',
-        help="specify the version of the packages, else latest only")
-    shared.add_argument("-D", "--drivers", action='store_true',
-        help="""include item's drivers as well
-                (return in search / install / download / etc)""")
-    shared.add_argument("-g", "--debug", action='store_true',
-        help="query and download from the debug pipeline")
-    shared.add_argument("search-term", type=str, nargs='?',
-        help="""Search terms to narrow down search results. Regex accepted
-        including special characters $.^[]."""
+    shared.add_argument("package-name", type=str, nargs='?',
+        help="""Packages to match against.  Can be a short name
+        such as 'kim-api' which will match the latest version,
+        or a package at a version e.g. 'kim-api@1.6.3'."""
     )
 
     # the sub actions that can be performed
-    parse_build = sub.add_parser(name='build',
-        help="build the current KIM packages using the API")
-    parse_download = sub.add_parser(name='download', parents=[shared],
-        help="download the source for the searched packages")
+    parse_activate = sub.add_parser(name='activate', parents=[shared],
+        help="activate a particular package for this environment")
+    parse_deactivate = sub.add_parser(name='deactivate', parents=[shared],
+        help="deactivate a particular package")
+    parse_config = sub.add_parser(name='config', parents=[shared],
+        help="configure the chip package manager with paths, etc")
+    parse_freeze = sub.add_parser(name='freeze', parents=[shared],
+        help="list the current package configuration")
     parse_install = sub.add_parser(name='install', parents=[shared],
-        help="install the particular KIM objects found")
-    parse_search = sub.add_parser(name='search', parents=[shared],
-        help="list the packages that match arguments")
-    parse_remove = sub.add_parser(name='remove',
-        help="remove the packages that match arguments")
+        help="install a package and its dependencies")
+    parse_store = sub.add_parser(name='config', parents=[shared],
+        help="save the current configuration ['use' to reload it]")
+    parse_use = sub.add_parser(name='use', parents=[shared],
+        help="use a previously stored package configuration")
+    parse_update = sub.add_parser(name='update', parents=[shared],
+        help="grab an updated list of packages")
+    parse_upgrade = sub.add_parser(name='upgrade', parents=[shared],
+        help="upgrade chip himself")
 
-    parse_build.set_defaults(action='build')
+    parse_activate.set_defaults(action='activate')
+    parse_deactivate.set_defaults(action='deactivate')
+    parse_config.set_defaults(action='config')
+    parse_freeze.set_defaults(action='freeze')
     parse_install.set_defaults(action='install')
-    parse_download.set_defaults(action='download')
-    parse_search.set_defaults(action='search')
-    parse_remove.set_defaults(action='remove')
+    parse_use.set_defaults(action='use')
+    parse_update.set_defaults(action='update')
 
     # custom actions for each particular action
+    """
     parse_install.add_argument("-s", "--skip-build", action='store_true',
         help="do not build the installed packages immediately")
     parse_install.add_argument("-f", "--force", action='store_true',
@@ -118,18 +105,16 @@ if __name__ == "__main__":
 
     parse_remove.add_argument("packages", type=str, nargs='*',
         help="Packages to remove. Must be full name, no regex.")
+    """
 
     args = vars(parser.parse_args())
 
-    if args.get("debug"):
-        _global_url = _global_url_debug
-
-    if args.get('action') == "build":
-        action_build()
     if args.get('action') == "install":
-        action_install( args, not args['skip_build'] )
-    if args.get('action') == "download":
-        action_download( args )
+        action_install(args)
+    if args.get('action') == "activate":
+        action_activate(args)
+    if args.get('action') == "deactivate":
+        action_deactivate(args)
     if args.get('action') == "search":
         action_search( args )
     if args.get('action') == "remove":

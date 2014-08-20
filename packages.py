@@ -58,13 +58,13 @@ from pip.download import (unpack_vcs_link, is_vcs_url, is_file_url,
 #import time, datetime
 #time.strftime("%Y-%m-%d %H:%M:%S")
 #datetime.strptime("2010-06-04 21:08:12", "%Y-%m-%d %H:%M:%S")
-
 join = os.path.join
 
 DIR_HOME = os.environ['HOME']
 DIR_PACKAGES = join(DIR_HOME, "packages")
 PACKFILE_NAME = "packages.json"
-PACKFILE = join(DIR_PACKAGES, PACKFILE_NAME)
+#PACKFILE = join(DIR_PACKAGES, PACKFILE_NAME)
+PACKFILE = "./tests/packages.json"
 PACKAGE_URL = "http://pipeline.openkim.org/packages"
 VERSIONSEP = "@"
 
@@ -93,15 +93,18 @@ def wrap_install(func):
         for dep in self.dependencies():
             dep.install()
 
-        if self.pkg_run('install'):
-            self.finialize_install()
-            return True
-
         managers = [o.active() for o in self.dependencies()]
         with nested(*managers):
-            func(self)
+            print "Installing", self.fullname, "..."
+            if self.pkg_run('install'):
+                self.finalize_install()
+                return True
+            else:
+                func(self)
 
-        self.finialize_install()
+        self.finalize_install()
+        print '\n'
+        return True
 
     return newinstall
 
@@ -132,7 +135,7 @@ class Package(object):
         with open(self.pkfile) as f:
             pks = json.load(f)
 
-        if re.match(VERSIONSEP, name):
+        if re.findall(VERSIONSEP, name):
             self.name, self.version = name.split(VERSIONSEP)
         else:
             self.name, self.version = name, None
@@ -159,7 +162,6 @@ class Package(object):
                         latest_match_version = ver
                         metadata = pk
                 else:
-                    print latest_match_version, ver
                     if (not latest_match_version or Version(ver) > Version(latest_match_version)):
                         latest_match_version = ver
                         metadata = pk
@@ -211,6 +213,7 @@ class Package(object):
                 json.dump(self.metadata, f, indent=4)
 
         if self.url:
+            print "Downloading", self.url
             shutil.rmtree(self.build_path)
             self.download_url(Link(self.url))
 
@@ -233,7 +236,7 @@ class Package(object):
             pkname = format_pk_name(req, ver_req)
             pkg = pkg_obj(name=req, versionrange=ver_req, pkfile=self.pkfile)
             deps.extend([pkg]+pkg.dependencies())
-        return deps
+        return list(set(deps))
 
     def version_matches(self, pks):
         nomatch = []
@@ -291,7 +294,7 @@ class Package(object):
             self.cmdprefix = []
 
     def run(self, cmd):
-        print ' '.join(cmd)
+        print '  '+' '.join(cmd)
         with open(self.log, 'w') as log:
             subprocess.check_call(self.cmdprefix + cmd, stdout=log, stderr=log)
 
@@ -307,7 +310,7 @@ class Package(object):
                 return True
         return False
 
-    def finialize_install(self):
+    def finalize_install(self):
         open(join(self.base_path, 'installed'), 'a').close()
 
     @wrap_install
@@ -355,11 +358,20 @@ class Package(object):
     def __repr__(self):
         return self.__str__()
 
+    def __eq__(self, right):
+        if right:
+            return self.fullname == right.fullname
+        return False
+
+    def __hash__(self):
+        return hash(self.fullname)
+
 class PythonPackage(Package):
     def __init__(self, *args, **kwargs):
         super(PythonPackage, self).__init__(*args, **kwargs)
         self.pipurl = self.data.get('url') if self.data else None
         self.pythonpath = join(self.install_path, 'lib/python2.7/site-packages')
+        self.pythonbinpath = join(self.install_path, 'bin')
 
     @wrap_install
     def install(self):
@@ -385,13 +397,14 @@ class PythonPackage(Package):
     @wrap_default('activate')
     def activate(self):
         self.path_push(self.install_path, "PYTHONPATH")
+        self.path_push(self.pythonbinpath, "PATH")
         sys.path.append(self.pythonpath)
 
     @wrap_default('deactivate')
     def deactivate(self):
         self.path_pull(self.install_path, "PYTHONPATH")
+        self.path_pull(self.pythonbinpath, "PATH")
         sys.path.remove(self.pythonpath)
-
 
 class BinaryPackage(Package):
     def __init__(self, *args, **kwargs):
@@ -433,15 +446,15 @@ class KIMAPIPackageV1(Package):
     @wrap_install
     def install(self):
         with self.indir(self.build_path):
-            shutil.copy("Makefile.KIM_Config.example", "Makefile.KIM_Config")
+            with open("Makefile.KIM_Config.example") as f:
+                cts = f.read()
+            cts = re.sub(r'(?m)^\KIM_DIR.*\n?', 'KIM_DIR='+self.build_path+'\n', cts)
+            cts = re.sub(r'(?m)^\#prefix.*\n?', 'prefix='+self.install_path+'\n', cts)
+            with open("Makefile.KIM_Config", 'w') as f:
+                f.write(cts)
 
-            paths = {
-                "build_path": self.build_path,
-                "install_path": self.install_path
-            }
             for c in self.buildcommands:
-                nc = Template(c).substitute(**paths)
-                nc = nc.split()
+                nc = c.split()
                 self.run(nc)
 
     @wrap_default('activate')
