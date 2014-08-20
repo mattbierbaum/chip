@@ -143,7 +143,7 @@
     "author": "Matt Bierbaum",
     "desc": "GCC compiler",
     "type": "apt",
-    "version": "4.8",
+    "version": "4.8.1",
     "date": "2014-08-21",
     "requires": {},
     "data": {
@@ -151,7 +151,7 @@
             "apt-get -y install python-software-properties",
             "add-apt-repository -y ppa:ubuntu-toolchain-r/test",
             "apt-get update",
-            "apt-get -y install gcc-4.8",
+            "apt-get -y install gcc-4.8=4.8.1-2ubuntu1~12.04",
             "update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-4.8 50"
         ]
     }
@@ -161,7 +161,7 @@
     "author": "Matt Bierbaum",
     "desc": "Caching nameserver for better query performance",
     "type": "apt",
-    "version": "4.8",
+    "version": "4.8.1",
     "date": "2014-08-21",
     "requires": {},
     "data": {
@@ -169,8 +169,36 @@
             "apt-get -y install python-software-properties",
             "add-apt-repository -y ppa:ubuntu-toolchain-r/test",
             "apt-get update",
-            "apt-get -y install gfortran-4.8",
+            "apt-get -y install gfortran-4.8=4.8.1-2ubuntu1~12.04",
             "update-alternatives --install /usr/bin/gfortran gfortran /usr/bin/gfortran-4.8 50"
+        ]
+    }
+},
+{
+    "name": "gnuplot",
+    "author": "Matt Bierbaum",
+    "desc": "Basic plotting program",
+    "type": "apt",
+    "version": "4.4.3",
+    "date": "2014-08-21",
+    "requires": {},
+    "data": {
+        "commands": [
+            "apt-get install -y gnuplot=4.4.3-0ubuntu3"
+        ]
+    }
+},
+{
+    "name": "openbabel",
+    "author": "Matt Bierbaum",
+    "desc": "Chemical toolbox library for python",
+    "type": "apt",
+    "version": "2.3.0",
+    "date": "2014-08-21",
+    "requires": {},
+    "data": {
+        "commands": [
+            "apt-get install -y python-openbabel=2.3.0+dfsg-3ubuntu3"
         ]
     }
 },
