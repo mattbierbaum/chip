@@ -294,9 +294,10 @@ class Package(object):
             self.cmdprefix = []
 
     def run(self, cmd):
-        print '  '+' '.join(cmd)
         with open(self.log, 'w') as log:
-            subprocess.check_call(self.cmdprefix + cmd, stdout=log, stderr=log)
+            cmd = self.cmdprefix + cmd
+            print '  '+' '.join(cmd)
+            subprocess.check_call(cmd, stdout=log, stderr=log)
 
     def haspy(self):
         return os.path.exists(self.pkgpy)
@@ -466,7 +467,25 @@ class KIMAPIPackageV1(Package):
         self.path_pull(self.bindir, "PATH")
 
 class APTPackage(Package):
-    pass
+    def __init__(self, *args, **kwargs):
+        super(APTPackage, self).__init__(*args, **kwargs)
+        if self.data:
+            self.commands = self.data['commands']
+
+    @wrap_install
+    def install(self):
+        with self.sudo():
+            for c in self.commands:
+                nc = c.split()
+                self.run(nc)
+
+    @wrap_default('activate')
+    def activate(self):
+        pass
+
+    @wrap_default('deactivate')
+    def deactivate(self):
+        pass
 
 def pkg_obj(name, *args, **kwargs):
     typedict = {
