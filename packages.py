@@ -215,7 +215,7 @@ class Package(object):
             self.download_url(Link(self.url))
 
     def download_url(self, link, location=None):
-        cache = join(self.base_path, '_cache')
+        cache = join(self.base_path, '.cache')
         self.mkdir(cache)
 
         location = location or self.build_path
@@ -459,6 +459,7 @@ def pkg_obj(name, *args, **kwargs):
     typedict = {
         "python": PythonPackage, "binary": BinaryPackage,
         "apt": APTPackage, 'kimapi-v1': KIMAPIPackageV1,
+        "meta": Package,
     }
     p = Package(name=name, *args, **kwargs)
     return typedict[p.ptype](name, *args, **kwargs)

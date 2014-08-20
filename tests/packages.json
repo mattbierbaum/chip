@@ -81,7 +81,7 @@
     "type": "kimapi-v1",
     "version": "1.6.3",
     "date": "2014-08-19",
-    "url": "git+https://github.com/openkim/kim-api.git",
+    "url": "git+https://github.com/openkim/kim-api.git@f87d222",
     "data": {
         "build-commands": [
             "make KIM_DIR=$build_path prefix=$install_path",
@@ -96,9 +96,9 @@
     "author": "Matt Bierbaum",
     "desc": "LAMMPS built serially for KIM",
     "type": "binary",
-    "version": "1.6.1",
+    "version": "1.6.3",
     "date": "2014-08-20",
-    "url": "http://pipeline.openkim.org/packages/lammps/lammps_serial_kim.20140806.tar.gz",
+    "url": "http://pipeline.openkim.org/packages/lammps/lammps-serial-kim-1.6.3-archive.tar.gz",
     "data": { "linkname": "lammps-serial" },
     "requires": { "kim-api": "~= 1.6" }
 },
@@ -107,10 +107,37 @@
     "author": "Matt Bierbaum",
     "desc": "MiniMol build for the KIM API",
     "type": "binary",
-    "version": "1.6.1",
+    "version": "1.6.3",
     "date": "2014-08-20",
-    "url": "http://pipeline.openkim.org/packages/minimol/minimol-kim-1.6-20140811.tar.gz",
+    "url": "http://pipeline.openkim.org/packages/minimol/minimol-kim-1.6.3-archive.tar.gz",
     "data": { "linkname": "minimol" },
     "requires": { "kim-api": "~= 1.6" }
+},
+{
+    "name": "make",
+    "author": "Matt Bierbaum",
+    "desc": "The GNU utility make",
+    "type": "binary",
+    "version": "3.82",
+    "date": "2014-08-21",
+    "url": "http://pipeline.openkim.org/packages/make/make-3.82-archive.tar.gz",
+    "data": { "linkname": "make" },
+    "requires": {}
+},
+{
+    "name": "base",
+    "author": "Matt Bierbaum",
+    "desc": "A base installation to bootstrap an environment",
+    "type": "meta",
+    "version": "0.1.0",
+    "date": "2014-08-21",
+    "requires": {
+        "kim-api": "~= 1.6",
+        "lammps-serial": "~= 1.6.1",
+        "minimol": "~= 1.6",
+        "openkim-python": "~= 0.9",
+        "kimcalculator": "~= 0.9",
+        "ASE": "~= 3.6.0"
+    }
 }
 ]
