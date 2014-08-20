@@ -78,9 +78,17 @@
     "name": "kim-api",
     "author": "Matt Bierbaum",
     "desc": "The official KIM API release",
-    "type": "kimapi",
+    "type": "kimapi-v1",
     "version": "1.6.3",
     "date": "2014-08-19",
+    "url": "git+https://github.com/openkim/kim-api.git",
+    "data": {
+        "build-commands": [
+            "make KIM_DIR=$build_path prefix=$install_path",
+            "make KIM_DIR=$build_path prefix=$install_path install",
+            "make KIM_DIR=$build_path prefix=$install_path install-set-default-to-v1"
+        ]
+    },
     "requires": {}
 },
 {
@@ -88,7 +96,7 @@
     "author": "Matt Bierbaum",
     "desc": "LAMMPS built serially for KIM",
     "type": "binary",
-    "version": "1.6.0",
+    "version": "1.6.1",
     "date": "2014-08-20",
     "url": "http://pipeline.openkim.org/packages/lammps/lammps_serial_kim.20140806.tar.gz",
     "data": { "linkname": "lammps-serial" },
@@ -99,7 +107,7 @@
     "author": "Matt Bierbaum",
     "desc": "MiniMol build for the KIM API",
     "type": "binary",
-    "version": "1.6.0",
+    "version": "1.6.1",
     "date": "2014-08-20",
     "url": "http://pipeline.openkim.org/packages/minimol/minimol-kim-1.6-20140811.tar.gz",
     "data": { "linkname": "minimol" },

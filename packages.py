@@ -48,8 +48,12 @@ import urllib
 import subprocess
 import functools
 import tarfile
+from string import Template
 from contextlib import contextmanager, nested
 from packaging.version import Version, Specifier
+from pip.index import Link
+from pip.download import (unpack_vcs_link, is_vcs_url, is_file_url,
+                          unpack_file_url, unpack_http_url)
 
 #import time, datetime
 #time.strftime("%Y-%m-%d %H:%M:%S")
@@ -155,6 +159,7 @@ class Package(object):
                         latest_match_version = ver
                         metadata = pk
                 else:
+                    print latest_match_version, ver
                     if (not latest_match_version or Version(ver) > Version(latest_match_version)):
                         latest_match_version = ver
                         metadata = pk
@@ -206,19 +211,21 @@ class Package(object):
                 json.dump(self.metadata, f, indent=4)
 
         if self.url:
-            dl = self.url
-            outname = join(self.base_path, self.fullname)
-            untarname = outname+"untar"
-            urllib.urlretrieve(self.url, outname)
-
-            tar = tarfile.open(outname)
-            tar.extractall(path=untarname)
-            tar.close()
-
-            os.remove(outname)
             shutil.rmtree(self.build_path)
-            shutil.copytree(untarname, self.build_path)
-            shutil.rmtree(untarname)
+            self.download_url(Link(self.url))
+
+    def download_url(self, link, location=None):
+        cache = join(self.base_path, '_cache')
+        self.mkdir(cache)
+
+        location = location or self.build_path
+        if is_vcs_url(link):
+            return unpack_vcs_link(link, location, only_download=False)
+        elif is_file_url(link):
+            return unpack_file_url(link, location)
+        else:
+            return unpack_http_url(link, location,
+                    cache, False)
 
     def dependencies(self):
         deps = []
@@ -415,15 +422,35 @@ class BinaryPackage(Package):
     def deactivate(self):
         self.path_pull(self.install_path, "PATH")
 
-class KIMAPIPackage(Package):
+class KIMAPIPackageV1(Package):
     def __init__(self, *args, **kwargs):
-        super(KIMAPIPackage, self).__init__(*args, **kwargs)
+        super(KIMAPIPackageV1, self).__init__(*args, **kwargs)
+
+        self.bindir = join(self.install_path, 'bin')
+        if self.data:
+            self.buildcommands = self.data['build-commands']
 
     @wrap_install
     def install(self):
-        pass
-        #with self.indir(self.build_path):
-        #    self.run(["make"])
+        with self.indir(self.build_path):
+            shutil.copy("Makefile.KIM_Config.example", "Makefile.KIM_Config")
+
+            paths = {
+                "build_path": self.build_path,
+                "install_path": self.install_path
+            }
+            for c in self.buildcommands:
+                nc = Template(c).substitute(**paths)
+                nc = nc.split()
+                self.run(nc)
+
+    @wrap_default('activate')
+    def activate(self):
+        self.path_push(self.bindir, "PATH")
+
+    @wrap_default('deactivate')
+    def deactivate(self):
+        self.path_pull(self.bindir, "PATH")
 
 class APTPackage(Package):
     pass
@@ -431,7 +458,7 @@ class APTPackage(Package):
 def pkg_obj(name, *args, **kwargs):
     typedict = {
         "python": PythonPackage, "binary": BinaryPackage,
-        "apt": APTPackage, 'kimapi': KIMAPIPackage,
+        "apt": APTPackage, 'kimapi-v1': KIMAPIPackageV1,
     }
     p = Package(name=name, *args, **kwargs)
     return typedict[p.ptype](name, *args, **kwargs)

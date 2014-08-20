@@ -1,12 +1,7 @@
 #!/usr/bin/env python
 import sys
 import json
-import urllib
-import tarfile
 import os
-import shutil
-import glob
-import uuid
 import subprocess
 
 import packages
@@ -60,9 +55,9 @@ if __name__ == "__main__":
 
     import argparse
     parser = argparse.ArgumentParser(description=
-        """Interface to 
-        download and install tests and models from the main repository
-        without login credentials or pipeline priviledges""",
+        """CHIP stands for Chip Handles kIm Packages.
+        This utility is a CLI frontend to manager KIM packages
+        on your local system.""",
         version="0.0.1"
     )
     sub = parser.add_subparsers()
