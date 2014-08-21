@@ -55,33 +55,17 @@ from pip.index import Link
 from pip.download import (unpack_vcs_link, is_vcs_url, is_file_url,
                           unpack_file_url, unpack_http_url)
 
-#import time, datetime
-#time.strftime("%Y-%m-%d %H:%M:%S")
-#datetime.strptime("2010-06-04 21:08:12", "%Y-%m-%d %H:%M:%S")
+import conf
+from util import *
+from log import createLogger
+logger = createLogger("./chip.log")
+cf = conf.read_conf()
 join = os.path.join
 
-DIR_HOME = os.environ['HOME']
-DIR_PACKAGES = join(DIR_HOME, "packages")
-PACKFILE_NAME = "packages.json"
-#PACKFILE = join(DIR_PACKAGES, PACKFILE_NAME)
-PACKFILE = "./tests/packages.json"
-PACKAGE_URL = "http://pipeline.openkim.org/packages"
 VERSIONSEP = "@"
 
 def format_pk_name(name, version):
     return name+VERSIONSEP+version
-
-class PackageError(Exception):
-    pass
-
-class PackageNotFound(Exception):
-    pass
-
-class PackageInconsistent(Exception):
-    pass
-
-class PackageSupportError(Exception):
-    pass
 
 def wrap_install(func):
     def newinstall(self):
@@ -95,7 +79,7 @@ def wrap_install(func):
 
         managers = [o.active() for o in self.dependencies()]
         with nested(*managers):
-            print "Installing", self.fullname, "..."
+            logger.info("Installing %r ..." % self.fullname)
             if self.pkg_run('install'):
                 self.finalize_install()
                 return True
@@ -103,7 +87,7 @@ def wrap_install(func):
                 func(self)
 
         self.finalize_install()
-        print '\n'
+        self.debug("Finalized installation for %s" % self.fullname)
         return True
 
     return newinstall
@@ -114,11 +98,13 @@ def wrap_default(action):
         def newdec(self):
             actions = ['activate', 'deactivate']
             if action not in actions:
-                raise PackageSupportError("Cannot wrap actions that are not %r")
+                raise util.PackageSupportError("Cannot wrap actions that are not %r")
 
             if action == 'activate':
+                logger.debug("Activating %s" % self.fullname)
                 open(join(self.base_path, 'active'), 'a').close()
             if action == 'deactivate' and self.isactive():
+                logger.debug("Deactivating %s" % self.fullname)
                 os.remove(join(self.base_path, 'active'))
 
             if self.pkg_run(action):
@@ -127,11 +113,14 @@ def wrap_default(action):
         return newdec
     return wrapper
 
+#=============================================================================
+# The main package class - subclasses made with decorators
+#=============================================================================
 class Package(object):
     def __init__(self, name, versionrange='', pkfile=None, search=True):
         metadata = None
 
-        self.pkfile = pkfile or PACKFILE
+        self.pkfile = pkfile or cf['pkfile']
         with open(self.pkfile) as f:
             pks = json.load(f)
 
@@ -171,13 +160,13 @@ class Package(object):
         if not metadata:
             if versionrange:
                 name = name + " " + versionrange
-            raise PackageNotFound("%s not found in %s" % (name, self.pkfile))
+            raise util.PackageNotFound("%s not found in %s" % (name, self.pkfile))
 
         self.metadata = metadata
         self.shortname = self.name
         self.fullname = format_pk_name(self.name, self.version)
 
-        self.base_path = join(DIR_PACKAGES, self.fullname)
+        self.base_path = join(cf['home'], self.fullname)
         self.install_path = join(self.base_path, "install")
         self.build_path = join(self.base_path, "build")
         self.log_path = join(self.base_path, "log")
@@ -198,7 +187,7 @@ class Package(object):
 
         consistent, bads = self.consistent()
         if not consistent:
-            raise PackageInconsistent(
+            raise util.PackageInconsistent(
                 "Package is inconsistent, the following versions don't match: %r" % bads
             )
 
@@ -213,7 +202,7 @@ class Package(object):
                 json.dump(self.metadata, f, indent=4)
 
         if self.url:
-            print "Downloading", self.url
+            logger.info("Downloading %r" % self.url)
             shutil.rmtree(self.build_path)
             self.download_url(Link(self.url))
 
@@ -296,7 +285,7 @@ class Package(object):
     def run(self, cmd):
         with open(self.log, 'w') as log:
             cmd = self.cmdprefix + cmd
-            print '  '+' '.join(cmd)
+            logger.info('  '+' '.join(cmd))
             subprocess.check_call(cmd, stdout=log, stderr=log)
 
     def haspy(self):
@@ -307,6 +296,10 @@ class Package(object):
             if not isinstance(cmd, list):
                 cmd = [cmd]
             with self.indir(self.base_path):
+                logger.debug(
+                    "Running %s's package.py with argument %r" 
+                    % (self.fullname, cmd)
+                )
                 self.run(['python', self.pkgpy] + cmd)
                 return True
         return False
@@ -367,6 +360,9 @@ class Package(object):
     def __hash__(self):
         return hash(self.fullname)
 
+#=============================================================================
+# Python package class
+#=============================================================================
 class PythonPackage(Package):
     def __init__(self, *args, **kwargs):
         super(PythonPackage, self).__init__(*args, **kwargs)
@@ -393,7 +389,7 @@ class PythonPackage(Package):
                         '-b', self.build_path, '--ignore-installed',
                         '--install-option=--prefix='+self.install_path])
                 except:
-                    raise PackageError("Could not setup package %s" % self.fullname)
+                    raise util.PackageError("Could not setup package %s" % self.fullname)
 
     @wrap_default('activate')
     def activate(self):
@@ -407,6 +403,8 @@ class PythonPackage(Package):
         self.path_pull(self.pythonbinpath, "PATH")
         sys.path.remove(self.pythonpath)
 
+#=============================================================================
+#=============================================================================
 class BinaryPackage(Package):
     def __init__(self, *args, **kwargs):
         super(BinaryPackage, self).__init__(*args, **kwargs)
@@ -436,6 +434,8 @@ class BinaryPackage(Package):
     def deactivate(self):
         self.path_pull(self.install_path, "PATH")
 
+#=============================================================================
+#=============================================================================
 class KIMAPIPackageV1(Package):
     def __init__(self, *args, **kwargs):
         super(KIMAPIPackageV1, self).__init__(*args, **kwargs)
@@ -466,6 +466,8 @@ class KIMAPIPackageV1(Package):
     def deactivate(self):
         self.path_pull(self.bindir, "PATH")
 
+#=============================================================================
+#=============================================================================
 class APTPackage(Package):
     def __init__(self, *args, **kwargs):
         super(APTPackage, self).__init__(*args, **kwargs)
