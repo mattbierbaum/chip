@@ -3,6 +3,8 @@ import sys
 import json
 import os
 import subprocess
+import argcomplete
+import argparse
 
 import packages
 join = os.path.join
@@ -42,7 +44,6 @@ def action_deactivate(args):
 if __name__ == "__main__":
     _global_url = 'http://pipeline.openkim.org'
 
-    import argparse
     parser = argparse.ArgumentParser(description=
         """CHIP stands for Chip Handles kIm Packages.
         This utility is a CLI frontend to manager KIM packages
