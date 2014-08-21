@@ -87,7 +87,7 @@ def wrap_install(func):
                 func(self)
 
         self.finalize_install()
-        self.debug("Finalized installation for %s" % self.fullname)
+        logger.debug("Finalized installation for %s" % self.fullname)
         return True
 
     return newinstall
