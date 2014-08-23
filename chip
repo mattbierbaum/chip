@@ -74,9 +74,9 @@ if __name__ == "__main__":
         help="list the current package configuration")
     parse_install = sub.add_parser(name='install', parents=[shared],
         help="install a package and its dependencies")
-    parse_store = sub.add_parser(name='config', parents=[shared],
+    parse_save = sub.add_parser(name='save', parents=[shared],
         help="save the current configuration ['use' to reload it]")
-    parse_use = sub.add_parser(name='use', parents=[shared],
+    parse_load = sub.add_parser(name='load', parents=[shared],
         help="use a previously stored package configuration")
     parse_update = sub.add_parser(name='update', parents=[shared],
         help="grab an updated list of packages")
@@ -85,10 +85,10 @@ if __name__ == "__main__":
 
     parse_activate.set_defaults(action='activate')
     parse_deactivate.set_defaults(action='deactivate')
-    parse_config.set_defaults(action='config')
+    parse_save.set_defaults(action='save')
     parse_freeze.set_defaults(action='freeze')
     parse_install.set_defaults(action='install')
-    parse_use.set_defaults(action='use')
+    parse_load.set_defaults(action='load')
     parse_update.set_defaults(action='update')
 
     # custom actions for each particular action
