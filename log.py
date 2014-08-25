@@ -2,11 +2,11 @@ import os
 import logging
 import logging.handlers
 
-FILELEVEL = logging.INFO
+FILELEVEL = logging.DEBUG
 
 def createLogger(path='', level=logging.INFO):
     logger = logging.getLogger("chip")
-    logger.setLevel(logging.INFO)
+    logger.setLevel(logging.DEBUG)
 
     if len(logger.handlers) > 0:
         return logger

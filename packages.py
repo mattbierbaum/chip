@@ -91,7 +91,9 @@ def wrap_default(action):
         def newdec(self):
             actions = ['activate', 'deactivate']
             if action not in actions:
-                raise util.PackageSupportError("Cannot wrap actions that are not %r")
+                raise util.PackageSupportError(
+                        "Cannot wrap actions that are not %r" % actions
+                    )
 
             if action == 'activate':
                 logger.debug("Activating %s" % self.fullname)
@@ -149,11 +151,12 @@ class Package(object):
         self.data = self.metadata.get('data')
 
         self.cmdprefix = []
+        self.env = {}
 
         consistent, bads = self.consistent()
         if not consistent:
             raise util.PackageInconsistent(
-                "Package is inconsistent, the following versions don't match: %r" % bads
+                "Package is inconsistent, the following versions don't match:\n%r" % bads
             )
 
     def bootstrap(self):
@@ -219,15 +222,26 @@ class Package(object):
     def isinstalled(self):
         return os.path.exists(join(self.base_path, 'installed'))
 
+    def isactive(self):
+        return os.path.exists(join(self.base_path, 'active'))
+
     def path_exists(self, path, pathvar='PATH'):
         return re.search(path, os.environ[pathvar]) is not None
 
     def path_push(self, newpath, pathvar='PATH'):
         if not self.path_exists(newpath, pathvar):
-            os.environ[pathvar] = newpath+os.path.pathsep+os.environ[pathvar]
+            sep = os.path.pathsep
+            self.env[pathvar] = newpath+sep+self.env.get(pathvar,'')
+            os.environ[pathvar] = newpath+sep+os.environ.get(pathvar,'')
 
     def path_pull(self, path, pathvar='PATH'):
-        os.environ[pathvar] = re.subn(path+os.path.pathsep, '', os.environ[pathvar])[0]
+        sep = os.path.pathsep
+        self.env[pathvar] = re.subn(path+sep, '', self.env.get(pathvar,''))[0]
+        os.environ[pathvar] = re.subn(path+sep, '', os.environ.get(pathvar,''))[0]
+
+    def path_print(self):
+        with self.active():
+            print json.dumps(self.env)
 
     def mkdir(self, path):
         if not os.path.isdir(path):
@@ -248,7 +262,7 @@ class Package(object):
             self.cmdprefix = []
 
     def run(self, cmd):
-        with open(self.log, 'w') as log:
+        with open(self.log, 'a') as log:
             cmd = self.cmdprefix + cmd
             logger.info('  '+' '.join(cmd))
             subprocess.check_call(cmd, stdout=log, stderr=log)
@@ -284,14 +298,29 @@ class Package(object):
     def deactivate(self):
         pass
 
-    def isactive(self):
-        return os.path.exists(join(self.base_path, 'active'))
+    @wrap_default("export")
+    def export(self, form='bash'):
+        with self.active():
+            paths = self.env.copy()
+        if form == 'bash':
+            return "\n".join([
+                "export %s=%s:${%s}" % (k, v, k) for k,v in paths.iteritems()
+            ])
+        if form == 'csh':
+            return "\n".join([
+                "setenv %s %s:${%s}" % (k, v, k) for k,v in paths.iteritems()
+            ])
 
     def uninstall(self):
-        pass
+        logger.info("Deleting package %s" % self.fullname)
+        shutil.rmtree(self.base_path)
 
     @contextmanager
     def active(self):
+        if self.isactive():
+            yield
+            return
+
         self.activate()
         try:
             yield
@@ -333,7 +362,7 @@ class Package(object):
         action = parser.add_mutually_exclusive_group(required=True)
         action.add_argument('activate', action='store_true')
         action.add_argument('deactivate', action='store_true')
-        action.add_argument('config', action='store_true')
+        action.add_argument('export', action='store_true')
         action.add_argument('install', action='store_true')
         action.add_argument('uninstall', action='store_true')
 
@@ -346,8 +375,8 @@ class Package(object):
             self.activate()
         if args.get('deactivate'):
             self.deactivate()
-        if args.get('config'):
-            self.config()
+        if args.get('export'):
+            self.export()
 
 #=============================================================================
 # Python package class
@@ -487,3 +516,9 @@ def pkg_obj(name, *args, **kwargs):
     p = Package(name=name, *args, **kwargs)
     return typedict[p.ptype](name, *args, **kwargs)
 
+def all(pkfile=''):
+    pk = pkfile or cf['pkfile']
+    with open(pk) as f:
+        pks = json.load(f)
+
+    return pks
