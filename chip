@@ -10,7 +10,7 @@ import conf
 import util
 import packages
 from log import createLogger
-logger = createLogger("./chip.log")
+logger = createLogger()
 cf = conf.read_conf()
 join = os.path.join
 
@@ -38,30 +38,27 @@ def action_uninstall(args):
 def action_activate(args):
     pk = packages.pkg_obj(args['package-name'])
     if pk.isinstalled():
-        pk.activate()
+        conf.env_put(pk)
     else:
         logger.warning("Package %s not installed, please install" % pk)
 
 def action_deactivate(args):
     pk = packages.pkg_obj(args['package-name'])
     if pk.isinstalled():
-        pk.deactivate()
+        conf.env_pull(pk.fullname)
     else:
         logger.warning("Package %s not installed, please install" % pk)
 
 def action_export(args):
-    active = []
-    pks = util.getpk()
-    for pk in pks:
-        o = packages.pkg_obj(
-                util.format_pk_name(
-                    pk.get('name'), pk.get('version')
-                )
-            )
-        if o.isactive():
-            active.append(o)
+    pks = conf.env_load()
+    print conf.env_wrapper()
+    print '\n'.join([packages.pkg_obj(pk).export() for pk in pks])
 
-    print '\n'.join([o.export() for o in active])
+def action_use(args):
+    conf.env_switch(args['package-name'])
+
+def action_search(args):
+    pass
 
 #========================================================
 # main : argparse and interpreting user interaction
@@ -99,14 +96,12 @@ if __name__ == "__main__":
     parse_deactivate = sub.add_parser(name='deactivate', parents=[shared],
         help="deactivate a particular package")
 
-    parse_save = sub.add_parser(name='save', parents=[shared],
-        help="save the current configuration ['load' to reload it]")
-    parse_load = sub.add_parser(name='load', parents=[shared],
-        help="use a previously stored package configuration")
+    parse_use = sub.add_parser(name='use', parents=[shared],
+        help="switch to a different chip environment")
     parse_export = sub.add_parser(name='export', parents=[shared],
         help="configure the chip package manager with paths, etc")
 
-    parse_freeze = sub.add_parser(name='freeze', parents=[shared],
+    parse_search = sub.add_parser(name='search', parents=[shared],
         help="list the current package configuration")
     parse_update = sub.add_parser(name='update', parents=[shared],
         help="grab an updated list of packages")
@@ -117,11 +112,10 @@ if __name__ == "__main__":
     parse_deactivate.set_defaults(action='deactivate')
     parse_export.set_defaults(action='export')
 
-    parse_save.set_defaults(action='save')
-    parse_freeze.set_defaults(action='freeze')
+    parse_use.set_defaults(action='use')
+    parse_search.set_defaults(action='search')
     parse_install.set_defaults(action='install')
     parse_uninstall.set_defaults(action='install')
-    parse_load.set_defaults(action='load')
     parse_update.set_defaults(action='update')
 
     # custom actions for each particular action
@@ -157,11 +151,11 @@ if __name__ == "__main__":
         action_deactivate(args)
     elif args.get('action') == "export":
         action_export(args)
+    elif args.get('action') == "use":
+        action_use(args)
 
     elif args.get('action') == "search":
         action_search( args )
-    elif args.get('action') == "remove":
-        action_remove( args )
     else:
         logger.error("No command specified, see --help")
 

@@ -56,7 +56,7 @@ from pip.download import (unpack_vcs_link, is_vcs_url, is_file_url,
 import conf
 import util
 from log import createLogger
-logger = createLogger("./chip.log")
+logger = createLogger()
 cf = conf.read_conf()
 join = os.path.join
 
@@ -312,7 +312,7 @@ class Package(object):
             paths = self.env.copy()
         if form == 'bash':
             return "\n".join([
-                "export %s=%s:${%s}" % (k, v, k) for k,v in paths.iteritems()
+                "export %s=%s:$%s" % (k, v, k) for k,v in paths.iteritems()
             ])
         if form == 'csh':
             return "\n".join([

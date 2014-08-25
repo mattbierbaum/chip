@@ -5,6 +5,7 @@ import logging.handlers
 FILELEVEL = logging.DEBUG
 
 def createLogger(path='', level=logging.INFO):
+    path = path or "./chip.log"
     logger = logging.getLogger("chip")
     logger.setLevel(logging.DEBUG)
 

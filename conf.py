@@ -2,13 +2,15 @@ import os
 import json
 import subprocess
 
-from log import createLogger
-logger = createLogger("./chip.log")
 join = os.path.join
 
 _HOME_DIR = os.path.expanduser("~")
 _DEFAULT_CONF_DIR = join(_HOME_DIR, ".kim-chip")
 _DEFAULT_CONF_FILE = join(_DEFAULT_CONF_DIR, "chip.json")
+DEFAULT_LOG_PATH = join(_DEFAULT_CONF_DIR, 'chip.log')
+
+from log import createLogger
+logger = createLogger(DEFAULT_LOG_PATH)
 
 #=============================================================================
 # functions that handle the global configuration
@@ -42,23 +44,91 @@ def read_conf():
 #=============================================================================
 # the section that deals with the user-frontend configuration
 #=============================================================================
-_ENVEXT = '-env.json'
+_DEFAULT_ENVS_DIR = join(_DEFAULT_CONF_DIR, "envs")
+_STATUS_FILE = join(_DEFAULT_CONF_DIR, "status.json")
+_ENVEXT = '.json'
+
+_DEFAULT_STATUS = {
+    "current-env": "default",
+}
+
+def env_path(env):
+    return join(_DEFAULT_ENVS_DIR, env+_ENVEXT)
+
+def initialize_status_if_empty():
+    if not os.path.exists(_DEFAULT_ENVS_DIR):
+        subprocess.check_call(['mkdir', '-p', _DEFAULT_ENVS_DIR])
+
+    if not os.path.exists(_STATUS_FILE):
+        with open(_STATUS_FILE, 'w') as f:
+            json.dump(_DEFAULT_STATUS, f, indent=4)
+
+    defaultenv = env_path(_DEFAULT_STATUS['current-env'])
+    if not os.path.exists(defaultenv):
+        with open(defaultenv, 'w') as f:
+            json.dump([], f, indent=4)
+
+def read_status():
+    initialize_status_if_empty()
+
+    with open(_STATUS_FILE) as f:
+        conf = json.load(f)
+
+    for key in _DEFAULT_STATUS.keys():
+        if not key in conf:
+            raise KeyError("'%s' not found in status.json" % key)
+    return conf
 
 def get_env_all():
-    pass
+    envs = []
+    cf = read_conf()
+    for env in os.listdir(_DEFAULT_ENVS_DIR):
+        if env.endswith(_ENVEXT):
+            name, ext = os.path.splitext(env)
+            envs.append(name)
+    return name
 
 def get_env_current():
-    pass
+    cf = read_status()
+    return cf.get("current-env")
 
-def get_env_active():
-    pass
+def env_switch(env=''):
+    env = env or 'default'
+    cf = read_status()
+    cf['current-env'] = env
 
-def save_env(envname=''):
-    pass
+    with open(_STATUS_FILE, 'w') as f:
+        json.dump(cf, f, indent=4)
 
-def load_env(envname=''):
-    pass
+    if not os.path.exists(env_path(env)):
+        with open(env_path(env), 'w') as f:
+            json.dump([], f, indent=4)
 
-def env_wrapper():
-    # add nice shell magic, etc.
-    pass
+def env_save(pks, env=''):
+    env = env or get_env_current()
+    with open(env_path(env), 'w') as f:
+        json.dump(pks, f, indent=4)
+
+def env_load(env=''):
+    env = env or get_env_current()
+    with open(env_path(env)) as f:
+        pks = json.load(f)
+    return pks
+
+def env_put(pk, env=''):
+    env = env or get_env_current()
+    pks = env_load(env)
+    pks.append(str(pk))
+    env_save(pks, env)
+
+def env_pull(pk, env=''):
+    env = env or get_env_current()
+    pks = env_load(env)
+    try:
+        pks.remove(pk)
+    except ValueError as e:
+        logger.error("Package %r is not part of environment %r" % (pk, env))
+    env_save(pks, env)
+
+def env_wrapper(env=''):
+    return ''

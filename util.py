@@ -6,7 +6,7 @@ from packaging.version import Version, Specifier
 
 import conf
 from log import createLogger
-logger = createLogger("./chip.log")
+logger = createLogger()
 cf = conf.read_conf()
 
 VERSIONSEP = "@"
