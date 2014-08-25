@@ -6,7 +6,12 @@ import subprocess
 import argcomplete
 import argparse
 
+import conf
+import util
 import packages
+from log import createLogger
+logger = createLogger("./chip.log")
+cf = conf.read_conf()
 join = os.path.join
 
 def unique(seq):
@@ -20,23 +25,43 @@ def unique(seq):
 def action_install(args):
     pk = packages.pkg_obj(args['package-name'])
     if pk.isinstalled():
-        print "Package %s already installed." % pk
+        logger.info("Package %s already installed." % pk)
     pk.install()
+
+def action_uninstall(args):
+    pk = packages.pkg_obj(args['package-name'])
+    if pk.isinstalled():
+        pk.uninstall()
+    else:
+        logger.info("Package %s already installed." % pk)
 
 def action_activate(args):
     pk = packages.pkg_obj(args['package-name'])
     if pk.isinstalled():
         pk.activate()
-        print os.environ['PATH']
     else:
-        print "Package %s not installed, please install" % pk
+        logger.warning("Package %s not installed, please install" % pk)
 
 def action_deactivate(args):
     pk = packages.pkg_obj(args['package-name'])
     if pk.isinstalled():
         pk.deactivate()
     else:
-        print "Package %s not installed, please install" % pk
+        logger.warning("Package %s not installed, please install" % pk)
+
+def action_export(args):
+    active = []
+    pks = util.getpk()
+    for pk in pks:
+        o = packages.pkg_obj(
+                util.format_pk_name(
+                    pk.get('name'), pk.get('version')
+                )
+            )
+        if o.isactive():
+            active.append(o)
+
+    print '\n'.join([o.export() for o in active])
 
 #========================================================
 # main : argparse and interpreting user interaction
@@ -48,7 +73,7 @@ if __name__ == "__main__":
         """CHIP stands for Chip Handles kIm Packages.
         This utility is a CLI frontend to manager KIM packages
         on your local system.""",
-        version="0.0.1"
+        version="0.1.0"
     )
     sub = parser.add_subparsers()
 
@@ -64,20 +89,25 @@ if __name__ == "__main__":
     )
 
     # the sub actions that can be performed
+    parse_install = sub.add_parser(name='install', parents=[shared],
+        help="install a package and its dependencies")
+    parse_uninstall = sub.add_parser(name='uninstall', parents=[shared],
+        help="uninstall a package but not its dependencies")
+
     parse_activate = sub.add_parser(name='activate', parents=[shared],
         help="activate a particular package for this environment")
     parse_deactivate = sub.add_parser(name='deactivate', parents=[shared],
         help="deactivate a particular package")
-    parse_config = sub.add_parser(name='config', parents=[shared],
-        help="configure the chip package manager with paths, etc")
-    parse_freeze = sub.add_parser(name='freeze', parents=[shared],
-        help="list the current package configuration")
-    parse_install = sub.add_parser(name='install', parents=[shared],
-        help="install a package and its dependencies")
+
     parse_save = sub.add_parser(name='save', parents=[shared],
         help="save the current configuration ['load' to reload it]")
     parse_load = sub.add_parser(name='load', parents=[shared],
         help="use a previously stored package configuration")
+    parse_export = sub.add_parser(name='export', parents=[shared],
+        help="configure the chip package manager with paths, etc")
+
+    parse_freeze = sub.add_parser(name='freeze', parents=[shared],
+        help="list the current package configuration")
     parse_update = sub.add_parser(name='update', parents=[shared],
         help="grab an updated list of packages")
     parse_upgrade = sub.add_parser(name='upgrade', parents=[shared],
@@ -85,9 +115,12 @@ if __name__ == "__main__":
 
     parse_activate.set_defaults(action='activate')
     parse_deactivate.set_defaults(action='deactivate')
+    parse_export.set_defaults(action='export')
+
     parse_save.set_defaults(action='save')
     parse_freeze.set_defaults(action='freeze')
     parse_install.set_defaults(action='install')
+    parse_uninstall.set_defaults(action='install')
     parse_load.set_defaults(action='load')
     parse_update.set_defaults(action='update')
 
@@ -110,14 +143,25 @@ if __name__ == "__main__":
 
     args = vars(parser.parse_args())
 
+    if args.get('verbose'):
+        log.setLevel(log.logging.DEBUG)
+
     if args.get('action') == "install":
         action_install(args)
-    if args.get('action') == "activate":
+    elif args.get('action') == "uninstall":
+        action_uninstall(args)
+
+    elif args.get('action') == "activate":
         action_activate(args)
-    if args.get('action') == "deactivate":
+    elif args.get('action') == "deactivate":
         action_deactivate(args)
-    if args.get('action') == "search":
+    elif args.get('action') == "export":
+        action_export(args)
+
+    elif args.get('action') == "search":
         action_search( args )
-    if args.get('action') == "remove":
+    elif args.get('action') == "remove":
         action_remove( args )
+    else:
+        logger.error("No command specified, see --help")
 

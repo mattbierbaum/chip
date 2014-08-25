@@ -36,3 +36,12 @@ def createLogger(path='', level=logging.INFO):
 
     return logger
 
+def setLevel(level=logging.INFO):
+    logger = logging.getLogger('chip')
+
+    if not logger.handlers:
+        raise Exception("Logging has not been established, cannot set level")
+
+    for l in logger.handlers:
+        if isinstance(l, logging.StreamHandler):
+            l.setLevel(level)

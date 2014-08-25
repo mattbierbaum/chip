@@ -96,15 +96,25 @@ def wrap_default(action):
                     )
 
             if action == 'activate':
+                for dep in self.dependencies():
+                    dep.activate()
                 logger.debug("Activating %s" % self.fullname)
                 open(join(self.base_path, 'active'), 'a').close()
             if action == 'deactivate' and self.isactive():
+                for dep in self.dependencies():
+                    dep.deactivate()
                 logger.debug("Deactivating %s" % self.fullname)
                 os.remove(join(self.base_path, 'active'))
 
             if self.pkg_run(action):
-                return
-            return func(self)
+                pass
+            else:
+                func(self)
+
+            if action == 'activate':
+                self.activated = True
+            if action == 'deactivate':
+                self.activated = False
         return newdec
     return wrapper
 
@@ -139,9 +149,6 @@ class Package(object):
         self.log_path = join(self.base_path, "log")
         self.log = join(self.log_path, "chip.log")
 
-        self.mkdir_ext(self.base_path)
-        self.mkdir(self.log_path)
-
         self.pkgfile = join(self.base_path, 'package.json')
         self.pkgpy = join(self.base_path, 'package.py')
 
@@ -152,11 +159,12 @@ class Package(object):
 
         self.cmdprefix = []
         self.env = {}
+        self.activated = False
 
         consistent, bads = self.consistent()
         if not consistent:
             raise util.PackageInconsistent(
-                "Package is inconsistent, the following versions don't match:\n%r" % bads
+                "Package is inconsistent, these versions don't match:\n%r" % bads
             )
 
     def bootstrap(self):
@@ -223,7 +231,8 @@ class Package(object):
         return os.path.exists(join(self.base_path, 'installed'))
 
     def isactive(self):
-        return os.path.exists(join(self.base_path, 'active'))
+        return self.activated
+        #return os.path.exists(join(self.base_path, 'active'))
 
     def path_exists(self, path, pathvar='PATH'):
         return re.search(path, os.environ[pathvar]) is not None
@@ -298,7 +307,6 @@ class Package(object):
     def deactivate(self):
         pass
 
-    @wrap_default("export")
     def export(self, form='bash'):
         with self.active():
             paths = self.env.copy()
@@ -317,17 +325,15 @@ class Package(object):
 
     @contextmanager
     def active(self):
-        if self.isactive():
-            yield
-            return
-
-        self.activate()
-        try:
-            yield
-        except Exception as e:
-            raise e
-        finally:
-            self.deactivate()
+        managers = [o.active() for o in self.dependencies()]
+        with nested(*managers):
+            self.activate()
+            try:
+                yield
+            except Exception as e:
+                raise e
+            finally:
+                self.deactivate()
 
     @contextmanager
     def indir(self, path):
@@ -516,9 +522,3 @@ def pkg_obj(name, *args, **kwargs):
     p = Package(name=name, *args, **kwargs)
     return typedict[p.ptype](name, *args, **kwargs)
 
-def all(pkfile=''):
-    pk = pkfile or cf['pkfile']
-    with open(pk) as f:
-        pks = json.load(f)
-
-    return pks
