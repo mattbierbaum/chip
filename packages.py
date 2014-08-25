@@ -325,7 +325,7 @@ class Package(object):
     def __hash__(self):
         return hash(self.fullname)
 
-    def run(self):
+    def main(self):
         parser = argparse.ArgumentParser(description=
             """Package setup script.  These are default options
             provided through the chip interface.  More can be
@@ -337,7 +337,7 @@ class Package(object):
         action.add_argument('install', action='store_true')
         action.add_argument('uninstall', action='store_true')
 
-        args = = parser.parse_args()
+        args = parser.parse_args()
         if args.get('install'):
             self.install()
         if args.get('uninstall'):
