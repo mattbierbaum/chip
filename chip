@@ -75,7 +75,7 @@ if __name__ == "__main__":
     parse_install = sub.add_parser(name='install', parents=[shared],
         help="install a package and its dependencies")
     parse_save = sub.add_parser(name='save', parents=[shared],
-        help="save the current configuration ['use' to reload it]")
+        help="save the current configuration ['load' to reload it]")
     parse_load = sub.add_parser(name='load', parents=[shared],
         help="use a previously stored package configuration")
     parse_update = sub.add_parser(name='update', parents=[shared],

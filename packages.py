@@ -44,28 +44,21 @@ import re
 import json
 import sys
 import shutil
-import urllib
 import subprocess
 import functools
-import tarfile
+import argparse
 from string import Template
 from contextlib import contextmanager, nested
-from packaging.version import Version, Specifier
 from pip.index import Link
 from pip.download import (unpack_vcs_link, is_vcs_url, is_file_url,
                           unpack_file_url, unpack_http_url)
 
 import conf
-from util import *
+import util
 from log import createLogger
 logger = createLogger("./chip.log")
 cf = conf.read_conf()
 join = os.path.join
-
-VERSIONSEP = "@"
-
-def format_pk_name(name, version):
-    return name+VERSIONSEP+version
 
 def wrap_install(func):
     def newinstall(self):
@@ -121,50 +114,22 @@ class Package(object):
         metadata = None
 
         self.pkfile = pkfile or cf['pkfile']
-        with open(self.pkfile) as f:
-            pks = json.load(f)
+        self.name, self.version = util.separate_fullname(name)
 
-        if re.findall(VERSIONSEP, name):
-            self.name, self.version = name.split(VERSIONSEP)
-        else:
-            self.name, self.version = name, None
-
-        if self.version:
-            for pk in pks:
-                if (pk.get('name') == self.name and
-                    pk.get('version') == self.version):
-                    metadata = pk
-        elif search:
-            latest_match_version = ''
-
-            for pk in pks:
-                tname = pk.get('name')
-                ver = pk.get('version')
-
-                if tname != self.name:
-                    continue
-
-                if versionrange:
-                    if (Version(ver) in Specifier(versionrange) and
-                            (not latest_match_version or
-                            (Version(ver) > Version(latest_match_version)))):
-                        latest_match_version = ver
-                        metadata = pk
-                else:
-                    if (not latest_match_version or Version(ver) > Version(latest_match_version)):
-                        latest_match_version = ver
-                        metadata = pk
-
-            self.version = latest_match_version
-
-        if not metadata:
+        if not self.version and search:
             if versionrange:
-                name = name + " " + versionrange
-            raise util.PackageNotFound("%s not found in %s" % (name, self.pkfile))
+                match = util.get_match_version(
+                            self.name, versionrange, self.pkfile
+                        )
+            else:
+                match = util.get_latest_version(self.name, self.pkfile)
+        else:
+            match = name
 
-        self.metadata = metadata
+        self.name, self.version = util.separate_fullname(match)
+        self.fullname = util.format_pk_name(self.name, self.version)
+        self.metadata = util.get_metadata(self.fullname)
         self.shortname = self.name
-        self.fullname = format_pk_name(self.name, self.version)
 
         self.base_path = join(cf['home'], self.fullname)
         self.install_path = join(self.base_path, "install")
@@ -222,7 +187,7 @@ class Package(object):
     def dependencies(self):
         deps = []
         for req, ver_req in self.requirements.iteritems():
-            pkname = format_pk_name(req, ver_req)
+            pkname = util.format_pk_name(req, ver_req)
             pkg = pkg_obj(name=req, versionrange=ver_req, pkfile=self.pkfile)
             deps.extend([pkg]+pkg.dependencies())
         return list(set(deps))
@@ -232,7 +197,7 @@ class Package(object):
         allmatch = True
         for req, ver in self.requirements.iteritems():
             for pk in pks:
-                if (req == pk.name and Version(pk.version) not in Specifier(ver)):
+                if (req == pk.name and not util.compatible(pk.version, ver)):
                     nomatch.append((pk.name, pk.version,  req, ver))
                     allmatch = False
 
@@ -359,6 +324,30 @@ class Package(object):
 
     def __hash__(self):
         return hash(self.fullname)
+
+    def run(self):
+        parser = argparse.ArgumentParser(description=
+            """Package setup script.  These are default options
+            provided through the chip interface.  More can be
+            made by overriding the run method""")
+        action = parser.add_mutually_exclusive_group(required=True)
+        action.add_argument('activate', action='store_true')
+        action.add_argument('deactivate', action='store_true')
+        action.add_argument('config', action='store_true')
+        action.add_argument('install', action='store_true')
+        action.add_argument('uninstall', action='store_true')
+
+        args = = parser.parse_args()
+        if args.get('install'):
+            self.install()
+        if args.get('uninstall'):
+            self.uninstall()
+        if args.get('activate'):
+            self.activate()
+        if args.get('deactivate'):
+            self.deactivate()
+        if args.get('config'):
+            self.config()
 
 #=============================================================================
 # Python package class
