@@ -1,3 +1,4 @@
 *.pyc
 *.swp
 chip.log
+build/

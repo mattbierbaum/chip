@@ -6,13 +6,27 @@ import subprocess
 import argcomplete
 import argparse
 
-import conf
-import util
-import packages
-from log import createLogger
+from chip import __version__
+from chip import conf
+from chip import util
+from chip import packages
+from chip.log import createLogger
 logger = createLogger()
 cf = conf.read_conf()
 join = os.path.join
+
+helpmsg = \
+"""
+
+CHIP stands for Chip Handles kIm Packages.  This utility is a CLI frontend to
+manager KIM packages on your local system.  This system includes versioning and
+dependencies.
+
+Typical usage:
+    chip install base
+    chip activate base
+    . chop
+"""
 
 def unique(seq):
     seen = set()
@@ -66,11 +80,8 @@ def action_search(args):
 if __name__ == "__main__":
     _global_url = 'http://pipeline.openkim.org'
 
-    parser = argparse.ArgumentParser(description=
-        """CHIP stands for Chip Handles kIm Packages.
-        This utility is a CLI frontend to manager KIM packages
-        on your local system.""",
-        version="0.1.0"
+    parser = argparse.ArgumentParser(description=helpmsg, version=__version__,
+            formatter_class=argparse.RawDescriptionHelpFormatter
     )
     sub = parser.add_subparsers()
 
