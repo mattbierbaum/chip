@@ -67,8 +67,7 @@ def add_path_bashrc():
 
     if not re.search(re.escape(export), contents):
         with open(bashrc, 'a') as f:
-            f.write('\n'+export)
-            f.write('\n. chop\n')
+            f.write('\n'+export+'\n')
 
 def chop_on_path():
     try:
