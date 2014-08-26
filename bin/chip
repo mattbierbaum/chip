@@ -20,17 +20,22 @@ helpmsg = \
 
 CHIP stands for Chip Handles kIm Packages.  This utility is a CLI frontend to
 manager KIM packages on your local system.  This system includes versioning and
-dependencies.
+dependencies. Typical usage of chip involves creating a named virtual
+environment, installing packages into this environment, then activating it for
+use:
 
-Typical usage:
+    chip use myenv
     chip install base
     chip activate base
     . chop
-"""
 
-def unique(seq):
-    seen = set()
-    return [x for x in seq if x not in seen and not seen.add(x)]
+At this point, you should have a new command prompt which lists the current
+chip environment, and the packages that you expect should be available on path.
+The command prompt will say something similar to:
+
+    $<typical-shell-stuff>(chip:myenv)$
+
+"""
 
 #========================================================
 # these are the main actions that can be run
@@ -63,10 +68,25 @@ def action_deactivate(args):
     else:
         logger.warning("Package %s not installed, please install" % pk)
 
+def action_clear(args):
+    conf.env_clear()
+
+def action_list(args):
+    pks = conf.env_load()
+    pks.sort()
+    print '\n'.join(pks)
+
 def action_export(args):
     pks = conf.env_load()
-    print conf.env_wrapper()
-    print '\n'.join([packages.pkg_obj(pk).export() for pk in pks])
+    f = conf.env_wrapper()
+    f += '\n'.join([packages.pkg_obj(pk).export() for pk in pks])
+    conf.chop_write(f)
+
+    if not conf.chop_on_path():
+        logger.warning("`chop` is currently not on your path,"\
+                "please run `source ~/.bashrc`")
+
+    logger.info("Settings exported.  To beging using, run `. chop`.")
 
 def action_use(args):
     conf.env_switch(args['package-name'])
@@ -109,6 +129,10 @@ if __name__ == "__main__":
 
     parse_use = sub.add_parser(name='use', parents=[shared],
         help="switch to a different chip environment")
+    parse_list = sub.add_parser(name='list', parents=[shared],
+        help="clear the current environment of all packages")
+    parse_clear = sub.add_parser(name='clear', parents=[shared],
+        help="clear the current environment of all packages")
     parse_export = sub.add_parser(name='export', parents=[shared],
         help="configure the chip package manager with paths, etc")
 
@@ -124,9 +148,11 @@ if __name__ == "__main__":
     parse_export.set_defaults(action='export')
 
     parse_use.set_defaults(action='use')
+    parse_list.set_defaults(action='list')
+    parse_clear.set_defaults(action='clear')
     parse_search.set_defaults(action='search')
     parse_install.set_defaults(action='install')
-    parse_uninstall.set_defaults(action='install')
+    parse_uninstall.set_defaults(action='uninstall')
     parse_update.set_defaults(action='update')
 
     # custom actions for each particular action
@@ -164,6 +190,10 @@ if __name__ == "__main__":
         action_export(args)
     elif args.get('action') == "use":
         action_use(args)
+    elif args.get('action') == "list":
+        action_list(args)
+    elif args.get('action') == "clear":
+        action_clear(args)
 
     elif args.get('action') == "search":
         action_search( args )

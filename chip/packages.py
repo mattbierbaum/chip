@@ -47,6 +47,7 @@ import shutil
 import subprocess
 import functools
 import argparse
+import inspect
 from string import Template
 from contextlib import contextmanager, nested
 from pip.index import Link
@@ -73,11 +74,7 @@ def wrap_install(func):
         managers = [o.active() for o in self.dependencies()]
         with nested(*managers):
             logger.info("Installing %r ..." % self.fullname)
-            if self.pkg_run('install'):
-                self.finalize_install()
-                return True
-            else:
-                func(self)
+            func(self)
 
         self.finalize_install()
         logger.debug("Finalized installation for %s" % self.fullname)
@@ -99,17 +96,12 @@ def wrap_default(action):
                 for dep in self.dependencies():
                     dep.activate()
                 logger.debug("Activating %s" % self.fullname)
-                open(join(self.base_path, 'active'), 'a').close()
             if action == 'deactivate' and self.isactive():
                 for dep in self.dependencies():
                     dep.deactivate()
                 logger.debug("Deactivating %s" % self.fullname)
-                os.remove(join(self.base_path, 'active'))
 
-            if self.pkg_run(action):
-                pass
-            else:
-                func(self)
+            func(self)
 
             if action == 'activate':
                 self.activated = True
@@ -150,7 +142,7 @@ class Package(object):
         self.log = join(self.log_path, "chip.log")
 
         self.pkgfile = join(self.base_path, 'package.json')
-        self.pkgpy = join(self.base_path, 'package.py')
+        self.pkgpy = join(self.build_path, 'package.py')
 
         self.ptype = self.metadata.get('type')
         self.url = self.metadata.get('url')
@@ -232,10 +224,9 @@ class Package(object):
 
     def isactive(self):
         return self.activated
-        #return os.path.exists(join(self.base_path, 'active'))
 
     def path_exists(self, path, pathvar='PATH'):
-        return re.search(path, os.environ[pathvar]) is not None
+        return re.search(path, os.environ.get(pathvar,'')) is not None
 
     def path_push(self, newpath, pathvar='PATH'):
         if not self.path_exists(newpath, pathvar):
@@ -278,19 +269,6 @@ class Package(object):
 
     def haspy(self):
         return os.path.exists(self.pkgpy)
-
-    def pkg_run(self, cmd):
-        if self.haspy():
-            if not isinstance(cmd, list):
-                cmd = [cmd]
-            with self.indir(self.base_path):
-                logger.debug(
-                    "Running %s's package.py with argument %r" 
-                    % (self.fullname, cmd)
-                )
-                self.run(['python', self.pkgpy] + cmd)
-                return True
-        return False
 
     def finalize_install(self):
         open(join(self.base_path, 'installed'), 'a').close()
@@ -365,24 +343,27 @@ class Package(object):
             """Package setup script.  These are default options
             provided through the chip interface.  More can be
             made by overriding the run method""")
-        action = parser.add_mutually_exclusive_group(required=True)
-        action.add_argument('activate', action='store_true')
-        action.add_argument('deactivate', action='store_true')
-        action.add_argument('export', action='store_true')
-        action.add_argument('install', action='store_true')
-        action.add_argument('uninstall', action='store_true')
+        sub = parser.add_subparsers()
+        p1 = sub.add_parser('activate', help='activate the package')
+        p2 = sub.add_parser('deactivate', help='deactivate the package')
+        p3 = sub.add_parser('install', help='install the package')
+        p4 = sub.add_parser('uninstall', help='uninstall the package')
 
-        args = parser.parse_args()
-        if args.get('install'):
+        p1.set_defaults(action='activate')
+        p2.set_defaults(action='deactivate')
+        p3.set_defaults(action='install')
+        p4.set_defaults(action='uninstall')
+
+        args = vars(parser.parse_args())
+
+        if args.get('action') == 'install':
             self.install()
-        if args.get('uninstall'):
+        if args.get('action') == 'uninstall':
             self.uninstall()
-        if args.get('activate'):
+        if args.get('action') == 'activate':
             self.activate()
-        if args.get('deactivate'):
+        if args.get('action') == 'deactivate':
             self.deactivate()
-        if args.get('export'):
-            self.export()
 
 #=============================================================================
 # Python package class
@@ -520,5 +501,17 @@ def pkg_obj(name, *args, **kwargs):
         "meta": Package,
     }
     p = Package(name=name, *args, **kwargs)
-    return typedict[p.ptype](name, *args, **kwargs)
+
+    if p.ptype == 'custom':
+        if not os.path.exists(p.pkgpy):
+            p.bootstrap()
+
+        sys.path.append(p.build_path)
+        import package
+        cls = package.pkg
+        sys.path.remove(p.build_path)
+    else:
+        cls = typedict[p.ptype]
+
+    return cls(name, *args, **kwargs)
 

@@ -13,10 +13,10 @@ def createLogger(path='', level=logging.INFO):
         return logger
     
     file_log_formatter = logging.Formatter(
-        '%(asctime)s - %(levelname)s - %(message)s'
+        '%(asctime)s - %(name)s-%(levelname)s: %(message)s'
     )
     log_formatter = logging.Formatter(
-        '%(levelname)s - %(message)s'
+        '%(name)s-%(levelname)s: %(message)s'
     )
 
     #create a rotating file handler
