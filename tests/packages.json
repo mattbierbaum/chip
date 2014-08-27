@@ -45,10 +45,7 @@
     "data": {
         "url": "http://pipeline.openkim.org/packages/ase/python-ase-3.6.0.2515.tar.gz"
     },
-    "requires": {
-        "kimcalculator": "~= 0.9",
-        "openkim-python": "~= 0.9"
-    }
+    "requires": {}
 },
 {
     "name":  "openkim-python",
@@ -75,7 +72,10 @@
     "data": {
         "url": "git+https://github.com/mattbierbaum/openkim-kimcalculator-ase.git@83366f5"
     },
-    "requires": { "openkim-python": "~= 0.9" }
+    "requires": {
+        "openkim-python": "~= 0.9",
+        "ASE": "~= 3.6.0"
+    }
 },
 {
     "name": "kim-api",
@@ -151,6 +151,9 @@
     "requires": {},
     "data": {
         "commands": [
+            "apt-get update",
+            "apt-get install build-essential",
+            "apt-get install gcc",
             "apt-get -y install python-software-properties",
             "add-apt-repository -y ppa:ubuntu-toolchain-r/test",
             "apt-get update",
@@ -169,6 +172,9 @@
     "requires": {},
     "data": {
         "commands": [
+            "apt-get update",
+            "apt-get install build-essential",
+            "apt-get install gfortran",
             "apt-get -y install python-software-properties",
             "add-apt-repository -y ppa:ubuntu-toolchain-r/test",
             "apt-get update",
