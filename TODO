@@ -1,0 +1,5 @@
+On the list of things to implement:
+
+* install from source
+* detect architecture / arch specific packages
+* packages-list and download all, concatenate

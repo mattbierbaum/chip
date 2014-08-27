@@ -74,13 +74,26 @@ def action_clear(args):
 def action_list(args):
     pks = conf.env_load()
     pks.sort()
-    print '\n'.join(pks)
+
+    print conf.get_env_current(), ':'
+    for pk in pks:
+        print '\t', pk
 
 def action_export(args):
     pks = conf.env_load()
-    f = conf.env_wrapper()
-    f += '\n'.join([packages.pkg_obj(pk).export() for pk in pks])
-    conf.chop_write(f)
+    allpks = []
+    for pk in pks:
+        pk = packages.pkg_obj(pk)
+        allpks.extend([pk]+pk.dependencies())
+
+    d = util.CompatibleVersionDict(allpks)
+    paths = []
+    for pk in d.tolist():
+        pk = packages.pkg_obj(pk)
+        paths.extend([[k, v] for k,v in pk.path_dict().iteritems()])
+
+    paths = util.PathDict(paths)
+    conf.chop_write( conf.format_chop(paths) )
 
     if not conf.chop_on_path():
         logger.warning("`chop` is currently not on your path,"\

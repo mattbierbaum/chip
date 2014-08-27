@@ -1,6 +1,7 @@
 import os
 import re
 import json
+import stat
 import string
 import subprocess
 
@@ -49,6 +50,7 @@ def read_conf():
 _DEFAULT_ENVS_DIR = join(_DEFAULT_CONF_DIR, "envs")
 _STATUS_FILE = join(_DEFAULT_CONF_DIR, "status.json")
 _CHOP_FILE = join(_DEFAULT_CONF_DIR, "chop")
+_BASHRC = join(_HOME_DIR, '.bashrc')
 _ENVEXT = '.json'
 
 _DEFAULT_STATUS = {
@@ -56,17 +58,16 @@ _DEFAULT_STATUS = {
 }
 
 def add_path_bashrc():
-    bashrc = join(_HOME_DIR, '.bashrc')
     export = "export PATH="+_DEFAULT_CONF_DIR+":$PATH"
 
-    if not os.path.exists(bashrc):
+    if not os.path.exists(_BASHRC):
         raise Exception("Expecting bash, error!")
     else:
-        with open(bashrc) as f:
+        with open(_BASHRC) as f:
             contents = f.read()
 
     if not re.search(re.escape(export), contents):
-        with open(bashrc, 'a') as f:
+        with open(_BASHRC, 'a') as f:
             f.write('\n'+export+'\n')
 
 def chop_on_path():
@@ -79,6 +80,8 @@ def chop_on_path():
 def chop_write(stuff):
     with open(_CHOP_FILE, 'w') as f:
         f.write(stuff)
+    st = os.stat(_CHOP_FILE)
+    os.chmod(_CHOP_FILE, st.st_mode | stat.S_IEXEC)
 
 def env_path(env):
     return join(_DEFAULT_ENVS_DIR, env+_ENVEXT)
@@ -172,9 +175,62 @@ def env_clear(env=''):
 
 shellscript = \
 """
-PS1="(chip:{env}) $PS1"
+command -v chip_deactivate >/dev/null 2>&1 && chip_deactivate
+
+function chip_deactivate {{
+    echo "Deactivating chip environment {env}..."
+    {resets}
+}}
+
+{saves}
+
+{prompt}
+{exports}
+
+echo "Exporting chip environment {env}..."
 """
 
-def env_wrapper(env=''):
+def format_saves(paths, form='bash'):
+    if form == 'bash':
+        ps = "export _CHIPOLD_PS1=$PS1\n"
+
+    if form == 'bash':
+        return ps+"\n".join([
+            "export _CHIPOLD_%s=$%s" % (k,k) for k,v in paths.iteritems()
+        ])
+
+def format_resets(paths, form='bash'):
+    if form == 'bash':
+        ps = "export PS1=$_CHIPOLD_PS1\n"
+
+    if form == 'bash':
+        return ps+"\n".join([
+            "export %s=$_CHIPOLD_%s" % (k,k) for k,v in paths.iteritems()
+        ])
+
+def format_exports(paths, form='bash'):
+    if form == 'bash':
+        return "\n".join([
+            "export %s=%s:$%s" % (k, v, k) for k,v in paths.iteritems()
+        ])
+    if form == 'csh':
+        return "\n".join([
+            "setenv %s %s:$%s" % (k, v, k) for k,v in paths.iteritems()
+        ])
+
+def format_prompt(env, form='bash'):
+    if form == 'bash':
+        return 'export PS1="(chip:{env}) $PS1"'.format(env=env)
+    if form == 'csh':
+        return 'setenv PS1 "(chip:{env}) $PS1"'.format(env=env)
+
+def format_chop(paths, env='', form='bash'):
     env = env or get_env_current()
-    return shellscript.format(env=env)
+    pks = env_load(env)
+    resets = format_resets(paths, form)
+    saves = format_saves(paths, form)
+    exports = format_exports(paths, form)
+    prompt = format_prompt(env, form)
+
+    return shellscript.format(resets=resets, exports=exports,
+            bashrc=_BASHRC, prompt=prompt, env=env, saves=saves)

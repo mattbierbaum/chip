@@ -190,34 +190,16 @@ class Package(object):
     def dependencies(self):
         deps = []
         for req, ver_req in self.requirements.iteritems():
-            pkname = util.format_pk_name(req, ver_req)
             pkg = pkg_obj(name=req, versionrange=ver_req, pkfile=self.pkfile)
             deps.extend([pkg]+pkg.dependencies())
-        return list(set(deps))
 
-    def version_matches(self, pks):
-        nomatch = []
-        allmatch = True
-        for req, ver in self.requirements.iteritems():
-            for pk in pks:
-                if (req == pk.name and not util.compatible(pk.version, ver)):
-                    nomatch.append((pk.name, pk.version,  req, ver))
-                    allmatch = False
-
-        return allmatch, nomatch
+        a = util.CompatibleVersionDict(deps)
+        return [pkg_obj(t) for t in a.tolist()]
 
     def consistent(self):
-        nomatch = []
-        allmatch = True
-
-        deps = self.dependencies()
-        for i in xrange(len(deps)):
-            ok, bads = deps[i].version_matches(deps)
-            if not ok:
-                nomatch.extend(bads)
-                allmatch = False
-
-        return allmatch, nomatch
+        dep = self.dependencies()
+        a = util.CompatibleVersionDict(dep)
+        return a.compatible()
 
     def isinstalled(self):
         return os.path.exists(join(self.base_path, 'installed'))
@@ -242,6 +224,11 @@ class Package(object):
     def path_print(self):
         with self.active():
             print json.dumps(self.env)
+
+    def path_dict(self):
+        with self.active():
+            paths = self.env.copy()
+        return paths
 
     def mkdir(self, path):
         if not os.path.isdir(path):
@@ -285,18 +272,6 @@ class Package(object):
     def deactivate(self):
         pass
 
-    def export(self, form='bash'):
-        with self.active():
-            paths = self.env.copy()
-        if form == 'bash':
-            return "\n".join([
-                "export %s=%s:$%s" % (k, v, k) for k,v in paths.iteritems()
-            ])
-        if form == 'csh':
-            return "\n".join([
-                "setenv %s %s:${%s}" % (k, v, k) for k,v in paths.iteritems()
-            ])
-
     def uninstall(self):
         logger.info("Deleting package %s" % self.fullname)
         shutil.rmtree(self.base_path)
@@ -337,33 +312,6 @@ class Package(object):
 
     def __hash__(self):
         return hash(self.fullname)
-
-    def main(self):
-        parser = argparse.ArgumentParser(description=
-            """Package setup script.  These are default options
-            provided through the chip interface.  More can be
-            made by overriding the run method""")
-        sub = parser.add_subparsers()
-        p1 = sub.add_parser('activate', help='activate the package')
-        p2 = sub.add_parser('deactivate', help='deactivate the package')
-        p3 = sub.add_parser('install', help='install the package')
-        p4 = sub.add_parser('uninstall', help='uninstall the package')
-
-        p1.set_defaults(action='activate')
-        p2.set_defaults(action='deactivate')
-        p3.set_defaults(action='install')
-        p4.set_defaults(action='uninstall')
-
-        args = vars(parser.parse_args())
-
-        if args.get('action') == 'install':
-            self.install()
-        if args.get('action') == 'uninstall':
-            self.uninstall()
-        if args.get('action') == 'activate':
-            self.activate()
-        if args.get('action') == 'deactivate':
-            self.deactivate()
 
 #=============================================================================
 # Python package class
