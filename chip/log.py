@@ -1,6 +1,7 @@
 import os
 import logging
 import logging.handlers
+import subprocess
 
 FILELEVEL = logging.DEBUG
 
@@ -11,7 +12,10 @@ def createLogger(path='', level=logging.INFO):
 
     if len(logger.handlers) > 0:
         return logger
-    
+
+    if not os.path.isdir(os.path.dirname(path)):
+        subprocess.check_call(['mkdir', '-p', os.path.dirname(path)])
+
     file_log_formatter = logging.Formatter(
         '%(asctime)s - %(name)s-%(levelname)s: %(message)s'
     )

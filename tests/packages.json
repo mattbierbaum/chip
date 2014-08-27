@@ -60,7 +60,10 @@
     "data": {
         "url": "git+https://github.com/woosong/openkim-python.git@359d27e"
     },
-    "requires": { "kim-api": "~= 1.6.0" }
+    "requires": {
+        "kim-api": "~= 1.6.0",
+        "swig": "~= 2.0"
+    }
 },
 {
     "name": "kimcalculator",
@@ -84,7 +87,7 @@
     "url": "git+https://github.com/openkim/kim-api.git@f87d222",
     "data": {
         "build-commands": [
-            "make ",
+            "make",
             "make install",
             "make install-set-default-to-v1"
         ]
@@ -203,6 +206,62 @@
     }
 },
 {
+    "name": "python-dev",
+    "author": "Matt Bierbaum",
+    "desc": "APT package for python development files",
+    "type": "apt",
+    "version": "2.7.3",
+    "date": "2014-08-27",
+    "requires": {},
+    "data": {
+        "commands": [
+            "apt-get install -y python-dev=2.7.3-0ubuntu2.2"
+        ]
+    }
+},
+{
+    "name": "libzmq-dev",
+    "author": "Matt Bierbaum",
+    "desc": "ZMQ library development files",
+    "type": "apt",
+    "version": "2.1.11",
+    "date": "2014-08-27",
+    "requires": {},
+    "data": {
+        "commands": [
+            "apt-get install -y libzmq-dev=2.1.11-1ubuntu1"
+        ]
+    }
+},
+{
+    "name": "mongodb",
+    "author": "Matt Bierbaum",
+    "desc": "APT packages for mongodb - dev, client, and server",
+    "type": "apt",
+    "version": "2.0.4",
+    "date": "2014-08-27",
+    "requires": {},
+    "data": {
+        "commands": [
+            "apt-get install -y mongodb=1:2.0.4-1ubuntu2.1"
+        ]
+    }
+},
+{
+    "name": "swig",
+    "author": "Matt Bierbaum",
+    "desc": "APT package for swig, the cross language wrapper",
+    "type": "apt",
+    "version": "2.0.4",
+    "date": "2014-08-27",
+    "requires": {},
+    "data": {
+        "commands": [
+            "apt-get install -y swig=2.0.4+really2.0.4-4ubuntu2"
+        ]
+    }
+},
+{
     "name": "config-pipeline",
     "author": "Matt Bierbaum",
     "desc": "Configuration for the pipeline package",
@@ -220,7 +279,12 @@
     "version": "1.0.0",
     "date": "2014-08-26",
     "requires": {
-        "config-pipeline": "~= 1.0"
+        "python-dev": ">= 2.7.3",
+        "libzmq-dev": ">= 2.1.11",
+        "mongodb": ">= 2.0",
+        "config-pipeline": "~= 1.0",
+        "pyclj": "~= 0.2",
+        "ASE": "~= 3.6.0"
     },
     "data": {
         "url": "git+https://github.com/openkim/openkim-pipeline.git@4e99d9f"
@@ -234,12 +298,9 @@
     "version": "0.1.0",
     "date": "2014-08-21",
     "requires": {
-        "kim-api": "~= 1.6",
+        "pipeline": "~= 1.0",
         "lammps-serial": "~= 1.6.1",
-        "minimol": "~= 1.6",
-        "openkim-python": "~= 0.9",
-        "kimcalculator": "~= 0.9",
-        "ASE": "~= 3.6.0"
+        "minimol": "~= 1.6"
     }
 }
 ]

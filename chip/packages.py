@@ -346,13 +346,13 @@ class PythonPackage(Package):
 
     @wrap_default('activate')
     def activate(self):
-        self.path_push(self.install_path, "PYTHONPATH")
+        self.path_push(self.pythonpath, "PYTHONPATH")
         self.path_push(self.pythonbinpath, "PATH")
         sys.path.append(self.pythonpath)
 
     @wrap_default('deactivate')
     def deactivate(self):
-        self.path_pull(self.install_path, "PYTHONPATH")
+        self.path_pull(self.pythonpath, "PYTHONPATH")
         self.path_pull(self.pythonbinpath, "PATH")
         sys.path.remove(self.pythonpath)
 

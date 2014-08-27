@@ -1,6 +1,9 @@
 #!/usr/bin/env python
 
-from distutils.core import setup
+try:
+    from setuptools import setup
+except ImportError:
+    from distutils.core import setup
 
 setup(
     name='chip',
@@ -10,5 +13,12 @@ setup(
     author_email='mkb72@cornell.edu',
     url='http://www.python.org/sigs/distutils-sig/',
     packages=['chip'],
-    scripts=['bin/chip']
+    scripts=['bin/chip'],
+    install_requires=[
+        "argcomplete==0.8.1",
+        "argparse==1.2.1",
+        "pip==1.5.6",
+        "packaging==14.0"
+    ],
+    dependency_links = ["https://github.com/pypa/packaging@pep440#egg=packaging-14.0"]
 )
