@@ -27,13 +27,33 @@ use:
     chip use myenv
     chip install base
     chip activate base
+    chip export
     . chop
 
 At this point, you should have a new command prompt which lists the current
 chip environment, and the packages that you expect should be available on path.
 The command prompt will say something similar to:
 
-    $<typical-shell-stuff>(chip:myenv)$
+    (chip:myenv) <typical-shell-stuff>$
+
+When you are done with the chip environment, you can deactivate it using
+
+    chip_deactivate
+
+or you can simply switch to a new environment, export and activate that one:
+
+    chip use blank
+    chip export
+    . chop
+
+or you can clear the current one and reactivate it:
+
+    chip clear
+    chip export
+    . chop
+
+Every time you need to check the current state of the chip environment, you can
+check by using the other commands which are listed in the full help below.
 
 """
 
@@ -111,8 +131,6 @@ def action_search(args):
 # main : argparse and interpreting user interaction
 #========================================================
 if __name__ == "__main__":
-    _global_url = 'http://pipeline.openkim.org'
-
     parser = argparse.ArgumentParser(description=helpmsg, version=__version__,
             formatter_class=argparse.RawDescriptionHelpFormatter
     )
@@ -143,11 +161,11 @@ if __name__ == "__main__":
     parse_use = sub.add_parser(name='use', parents=[shared],
         help="switch to a different chip environment")
     parse_list = sub.add_parser(name='list', parents=[shared],
-        help="clear the current environment of all packages")
+        help="list the current environment as well as its packages")
     parse_clear = sub.add_parser(name='clear', parents=[shared],
         help="clear the current environment of all packages")
     parse_export = sub.add_parser(name='export', parents=[shared],
-        help="configure the chip package manager with paths, etc")
+        help="prepare the chop command with the current settings")
 
     parse_search = sub.add_parser(name='search', parents=[shared],
         help="list the current package configuration")
