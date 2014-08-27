@@ -2,3 +2,5 @@
 *.swp
 chip.log
 build/
+chip.egg-info/
+dist/

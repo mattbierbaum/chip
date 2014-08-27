@@ -20,5 +20,5 @@ setup(
         "pip==1.5.6",
         "packaging==14.0"
     ],
-    dependency_links = ["https://github.com/pypa/packaging@pep440#egg=packaging-14.0"]
+    dependency_links=["https://github.com/pypa/packaging/archive/master.tar.gz#egg=packaging-14.0"]
 )
