@@ -19,7 +19,7 @@ logger = createLogger(DEFAULT_LOG_PATH)
 # functions that handle the global configuration
 #=============================================================================
 _DEFAULT_FIELDS = {
-    "url": "http://pipeline.openkim.org/packages",
+    "url": "https://raw.githubusercontent.com/mattbierbaum/chip/master/tests/packages.json",
     "home":  join(_HOME_DIR, "openkim-packages"),
     "pkfile": join(_HOME_DIR, "openkim-packages", "packages.json")
 }

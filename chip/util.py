@@ -1,8 +1,11 @@
+import os
 import re
 import json
 import time
 import datetime
+import subprocess
 from packaging.version import Version, Specifier
+from pip.download import get_file_content
 
 import conf
 from log import createLogger
@@ -32,8 +35,20 @@ class PackageSupportError(Exception):
 #=============================================================================
 # general util functions
 #=============================================================================
+def download_pkfile():
+    if not os.path.isdir(cf['home']):
+        subprocess.check_call(['mkdir', '-p', cf['home'])
+
+    if not os.path.exists(cf['pkfile']):
+        logger.info("Downloading package file %s" % cf['url'])
+        url, content = get_file_content(cf['url'])
+        with open(cf['pkfile'], 'w') as f:
+            f.write(content)
+
 def getpk(pkfile=None):
     pkfile = pkfile or cf['pkfile']
+    download_pkfile()
+
     with open(pkfile) as f:
         pks = json.load(f)
     return pks
