@@ -48,6 +48,22 @@
     "requires": {}
 },
 {
+    "name": "numpy",
+    "author": "Matt Bierbaum",
+    "desc": "numerical python library in c",
+    "type": "pip",
+    "version": "1.8.2",
+    "date": "2014-08-27",
+    "data": {
+        "commands": [
+            "sudo pip install numpy==1.8.2"
+        ]
+    },
+    "requires": {
+        "python-dev": ">= 2.7.0"
+    }
+},
+{
     "name":  "openkim-python",
     "author": "Matt Bierbaum",
     "desc": "Atomic Simulation Environment",
@@ -58,7 +74,9 @@
         "url": "git+https://github.com/woosong/openkim-python.git@359d27e"
     },
     "requires": {
+        "numpy": ">= 1.8.0",
         "kim-api": "~= 1.6.0",
+        "python-dev": ">= 2.7.0",
         "swig": "~= 2.0"
     }
 },
@@ -92,7 +110,10 @@
             "make install-set-default-to-v1"
         ]
     },
-    "requires": {}
+    "requires": {
+        "gcc": ">= 4.8",
+        "gfortran": ">= 4.8"
+    }
 },
 {
     "name": "lammps-serial",

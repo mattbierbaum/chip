@@ -37,7 +37,7 @@ class PackageSupportError(Exception):
 #=============================================================================
 def download_pkfile():
     if not os.path.isdir(cf['home']):
-        subprocess.check_call(['mkdir', '-p', cf['home'])
+        subprocess.check_call(['mkdir', '-p', cf['home']])
 
     if not os.path.exists(cf['pkfile']):
         logger.info("Downloading package file %s" % cf['url'])

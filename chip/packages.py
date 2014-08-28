@@ -73,7 +73,7 @@ def wrap_install(func):
 
         managers = [o.active() for o in self.dependencies()]
         with nested(*managers):
-            logger.info("Installing %r ..." % self.fullname)
+            logger.info("Installing %s ..." % self.fullname)
             func(self)
 
         self.finalize_install()
@@ -89,7 +89,7 @@ def wrap_default(action):
             actions = ['activate', 'deactivate']
             if action not in actions:
                 raise util.PackageSupportError(
-                        "Cannot wrap actions that are not %r" % actions
+                        "Cannot wrap actions that are not %s" % actions
                     )
 
             if action == 'activate':
@@ -170,7 +170,7 @@ class Package(object):
                 json.dump(self.metadata, f, indent=4)
 
         if self.url:
-            logger.info("Downloading %r" % self.url)
+            logger.info("Downloading %s" % self.url)
             shutil.rmtree(self.build_path)
             self.download_url(Link(self.url))
 
@@ -446,7 +446,7 @@ def pkg_obj(name, *args, **kwargs):
     typedict = {
         "python": PythonPackage, "binary": BinaryPackage,
         "apt": APTPackage, 'kimapi-v1': KIMAPIPackageV1,
-        "meta": Package,
+        "meta": Package, "pip": APTPackage,
     }
     p = Package(name=name, *args, **kwargs)
 
