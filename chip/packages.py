@@ -149,7 +149,6 @@ class Package(object):
         self.requirements = self.metadata.get("requires")
         self.data = self.metadata.get('data')
 
-        self.cmdprefix = []
         self.env = {}
         self.activated = False
 
@@ -238,21 +237,14 @@ class Package(object):
         if not os.path.isdir(extendedpath):
             subprocess.check_call(['mkdir', '-p', extendedpath])
 
-    @contextmanager
-    def sudo(self):
-        self.cmdprefix = ['sudo']
-        try:
-            yield
-        except Exception as e:
-            raise e
-        finally:
-            self.cmdprefix = []
-
     def run(self, cmd):
         with open(self.log, 'a') as log:
-            cmd = self.cmdprefix + cmd
             logger.info('  '+' '.join(cmd))
-            subprocess.check_call(cmd, stdout=log, stderr=log)
+            if 'sudo' in cmd:
+                p = subprocess.Popen(cmd, stderr=log, stdout=log, stdin=sys.stdin)
+                p.communicate()
+            else:
+                subprocess.check_call(cmd, stdout=log, stderr=log)
 
     def haspy(self):
         return os.path.exists(self.pkgpy)
@@ -429,10 +421,9 @@ class APTPackage(Package):
 
     @wrap_install
     def install(self):
-        with self.sudo():
-            for c in self.commands:
-                nc = c.split()
-                self.run(nc)
+        for c in self.commands:
+            nc = c.split()
+            self.run(nc)
 
     @wrap_default('activate')
     def activate(self):
