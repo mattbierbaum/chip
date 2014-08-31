@@ -1,5 +1,20 @@
 On the list of things to implement:
 
+* reconsider pip -t (--target) so that pypi dependencies are installed correctly
+    - what is the appropriate flag for setup.py?
+    - perhaps move setup.py moves to be pip installs from file://directory
+      (I checked that this works for just giving the directory name)
+    - SCRIPTS ARE NOT INSTALLED THIS WAY!
+    - regular setuptools installs dependencies and actually works, probably
+      going to get rid of pip from all of these things, leave it around
+      for downloading files lol
+    - DONE, pip removed except for downloads...
+
 * install from source
 * detect architecture / arch specific packages
 * packages-list and download all, concatenate
+* allow multiple packages to provide the same requirement perhaps through
+  a 'provides' mechanism.  BUT! that messes with how we currently resolve
+  dependencies...
+
+* sqlite database for faster resolution (important!)

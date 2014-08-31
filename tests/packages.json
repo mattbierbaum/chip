@@ -7,9 +7,7 @@
     "version": "14.0",
     "date":    "2014-08-18",
     "requires": {},
-    "data":    {
-        "url": "git+https://github.com/pypa/packaging@pep440"
-    }
+    "url": "git+https://github.com/pypa/packaging@master"
 },
 {
     "name":    "pyclj",
@@ -19,9 +17,7 @@
     "version": "0.2.2",
     "date":    "2014-08-18",
     "requires": {},
-    "data":  {
-        "url": "git+https://github.com/sunng87/pyclj@a35bc0db"
-    }
+    "url": "git+https://github.com/sunng87/pyclj@a35bc0db"
 },
 {
     "name":    "bottle",
@@ -30,9 +26,7 @@
     "type":    "python",
     "version": "0.11.6",
     "date":    "2014-08-19",
-    "data": {
-        "url": "git+https://github.com/defnull/bottle.git@b8ad3a5a0f"
-    },
+    "url": "git+https://github.com/defnull/bottle.git@b8ad3a5a0f",
     "requires": {}
 },
 {
@@ -42,9 +36,7 @@
     "type": "python",
     "version": "3.6.0",
     "date": "2014-08-19",
-    "data": {
-        "url": "http://pipeline.openkim.org/packages/ase/python-ase-3.6.0.2515.tar.gz"
-    },
+    "url": "http://pipeline.openkim.org/packages/ase/python-ase-3.6.0.2515.tar.gz",
     "requires": {}
 },
 {
@@ -70,9 +62,7 @@
     "type": "python",
     "version": "0.9.0",
     "date": "2014-08-19",
-    "data": {
-        "url": "git+https://github.com/woosong/openkim-python.git@359d27e"
-    },
+    "url": "git+https://github.com/woosong/openkim-python.git@359d27e",
     "requires": {
         "numpy": ">= 1.8.0",
         "kim-api": "~= 1.6.0",
@@ -87,9 +77,7 @@
     "type": "python",
     "version": "0.9.0",
     "date": "2014-08-20",
-    "data": {
-        "url": "git+https://github.com/mattbierbaum/openkim-kimcalculator-ase.git@83366f5"
-    },
+    "url": "git+https://github.com/mattbierbaum/openkim-kimcalculator-ase.git@83366f5",
     "requires": {
         "openkim-python": "~= 0.9",
         "ASE": "~= 3.6.0"
@@ -313,9 +301,7 @@
         "pyclj": "~= 0.2",
         "ASE": "~= 3.6.0"
     },
-    "data": {
-        "url": "git+https://github.com/openkim/openkim-pipeline.git@4e99d9f"
-    }
+    "url": "git+https://github.com/openkim/openkim-pipeline.git@4e99d9f"
 },
 {
     "name": "base",

@@ -318,23 +318,16 @@ class PythonPackage(Package):
     @wrap_install
     def install(self):
         if os.path.exists(join(self.build_path, 'setup.py')):
-            with self.active():
+            self.mkdir_ext(self.pythonpath)
+            self.mkdir_ext(self.pythonbinpath)
+
+            with self.active(), self.indir(self.build_path):
                 self.run(['python', 'setup.py', 'install',
                     '--prefix='+self.install_path])
-
-        elif self.data:
-            with self.active():
-                self.run(['pip', 'install', self.pipurl, '--ignore-installed',
-                    '-b', self.build_path,
-                    '--install-option=--prefix='+self.install_path])
         else:
-            with self.active():
-                try:
-                    self.run(['pip', 'install', self.name+"=="+self.version,
-                        '-b', self.build_path, '--ignore-installed',
-                        '--install-option=--prefix='+self.install_path])
-                except:
-                    raise util.PackageError("Could not setup package %s" % self.fullname)
+            raise util.PackageError(
+                "No setup.py found for package %s" % self.fullname
+            )
 
     @wrap_default('activate')
     def activate(self):
@@ -435,9 +428,12 @@ class APTPackage(Package):
 
 def pkg_obj(name, *args, **kwargs):
     typedict = {
-        "python": PythonPackage, "binary": BinaryPackage,
-        "apt": APTPackage, 'kimapi-v1': KIMAPIPackageV1,
-        "meta": Package, "pip": APTPackage,
+        "meta": Package,
+        "apt": APTPackage,
+        "pip": APTPackage,
+        "python": PythonPackage,
+        "binary": BinaryPackage,
+        'kimapi-v1': KIMAPIPackageV1,
     }
     p = Package(name=name, *args, **kwargs)
 
