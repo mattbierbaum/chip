@@ -38,7 +38,7 @@ The command prompt will say something similar to:
 
 When you are done with the chip environment, you can deactivate it using
 
-    chip_deactivate
+    chip-deactivate
 
 or you can simply switch to a new environment, export and activate that one:
 
@@ -106,13 +106,12 @@ def action_export(args):
         pk = packages.pkg_obj(pk)
         allpks.extend([pk]+pk.dependencies())
 
-    d = util.CompatibleVersionDict(allpks)
+    d = packages.CompatibleVersionDict(allpks)
     paths = []
     for pk in d.tolist():
-        pk = packages.pkg_obj(pk)
         paths.extend([[k, v] for k,v in pk.path_dict().iteritems()])
 
-    paths = util.PathDict(paths)
+    paths = packages.PathDict(paths)
     conf.chop_write( conf.format_chop(paths) )
 
     if not conf.chop_on_path():

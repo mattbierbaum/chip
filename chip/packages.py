@@ -34,9 +34,12 @@ minimal amount of information to specify a package can be placed in the data
 field.  If this field is occupied then it is assumed that no other additinoal
 files are necessary to define a package.
 
-PythonPackage:
+APTPackage:
     "data":  {
-        "url": "<standalone url for pip>"
+        "commands": [
+           "command 1",
+           "commmand 2"
+        ]
     }
 """
 import os
@@ -48,6 +51,7 @@ import subprocess
 import functools
 import argparse
 import inspect
+import itertools
 from string import Template
 from contextlib import contextmanager, nested
 from pip.index import Link
@@ -192,12 +196,12 @@ class Package(object):
             pkg = pkg_obj(name=req, versionrange=ver_req, pkfile=self.pkfile)
             deps.extend([pkg]+pkg.dependencies())
 
-        a = util.CompatibleVersionDict(deps)
-        return [pkg_obj(t) for t in a.tolist()]
+        a = CompatibleVersionDict(deps)
+        return a.tolist()
 
     def consistent(self):
         dep = self.dependencies()
-        a = util.CompatibleVersionDict(dep)
+        a = CompatibleVersionDict(dep)
         return a.compatible()
 
     def isinstalled(self):
@@ -311,7 +315,6 @@ class Package(object):
 class PythonPackage(Package):
     def __init__(self, *args, **kwargs):
         super(PythonPackage, self).__init__(*args, **kwargs)
-        self.pipurl = self.data.get('url') if self.data else None
         self.pythonpath = join(self.install_path, 'lib/python2.7/site-packages')
         self.pythonbinpath = join(self.install_path, 'bin')
 
@@ -449,4 +452,63 @@ def pkg_obj(name, *args, **kwargs):
         cls = typedict[p.ptype]
 
     return cls(name, *args, **kwargs)
+
+
+#==============================================================================
+# gathering complete lists, triming, and checking consistency
+#==============================================================================
+class CompatibleVersionDict(dict):
+    def __init__(self, pklist=[], *args, **kwargs):
+        super(CompatibleVersionDict, self).__init__(*args, **kwargs)
+        if pklist:
+            self.fromlist(pklist)
+
+    def __setitem__(self, key, value):
+        done = False
+
+        pks = []
+        if self.get(key):
+            pks = self.get(key)
+            for i in xrange(len(pks)):
+                ver = pks[i].version
+                if util.compatible(ver, util.v2s(value.version)):
+                    if util.later(value.version, ver):
+                        pks[i] = value
+                    done = True
+
+            if not done:
+                pks.append(value)
+        else:
+            pks.append(value)
+
+        super(CompatibleVersionDict, self).update({key: pks})
+
+    def tolist(self):
+        return list(itertools.chain.from_iterable([v for k,v in self.iteritems()]))
+
+    def fromlist(self, pks):
+        for pk in pks:
+            self.__setitem__(pk.name, pk)
+
+    def compatible(self):
+        good, bads = True, []
+        for k,v in self.iteritems():
+            if len(v) > 1:
+                bads.extend(v)
+                good = False
+        return good, bads
+
+
+class PathDict(dict):
+    def __init__(self, paths=[], *args, **kwargs):
+        super(PathDict, self).__init__(*args, **kwargs)
+        if paths:
+            for k,v in paths:
+                self.__setitem__(k,v)
+
+    def __setitem__(self, key, value):
+        if self.get(key):
+            super(PathDict, self).update({key: value+":"+self.get(key)})
+        else:
+            super(PathDict, self).update({key: value})
 

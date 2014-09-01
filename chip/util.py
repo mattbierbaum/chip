@@ -45,12 +45,16 @@ def download_pkfile():
         with open(cf['pkfile'], 'w') as f:
             f.write(content)
 
+gpks = None
+
 def getpk(pkfile=None):
+    global gpks
     pkfile = pkfile or cf['pkfile']
     download_pkfile()
 
     with open(pkfile) as f:
         pks = json.load(f)
+        gpks = pks 
     return pks
 
 def is_fullname(name):
@@ -80,7 +84,7 @@ def v2s(v):
 # version searching and formatting routines
 #=============================================================================
 def get_latest_version(name, pkfile=None):
-    pks = getpk(pkfile)
+    pks = gpks or getpk(pkfile)
 
     currver = ''
     for pk in pks:
@@ -95,7 +99,7 @@ def get_latest_version(name, pkfile=None):
     return format_pk_name(name, currver)
 
 def get_match_version(name, versionrange, pkfile=None):
-    pks = getpk(pkfile)
+    pks = gpks or getpk(pkfile)
 
     currver = ''
     for pk in pks:
@@ -112,75 +116,11 @@ def get_match_version(name, versionrange, pkfile=None):
     return format_pk_name(name, currver)
 
 def get_metadata(fullname, pkfile=None):
-    pks = getpk(pkfile)
+    pks = gpks or getpk(pkfile)
     n, v = separate_fullname(fullname)
 
     for pk in pks:
         if n == pk.get('name') and v == pk.get('version'):
             return pk
     raise PackageNotFound("Package %s was not found." % fullname)
-
-#==============================================================================
-# gathering complete lists, triming, and checking consistency
-#==============================================================================
-class CompatibleVersionDict(dict):
-    def __init__(self, pklist=[], *args, **kwargs):
-        super(CompatibleVersionDict, self).__init__(*args, **kwargs)
-        if pklist:
-            self.fromlist(pklist)
-
-    def __setitem__(self, key, value):
-        done = False
-
-        vers = []
-        if self.get(key):
-            vers = self.get(key)
-            for i in xrange(len(vers)):
-                ver = vers[i]
-                if compatible(ver, v2s(value)):
-                    if later(value, ver):
-                        vers[i] = value
-                    done = True
-
-            if not done:
-                vers.append(value)
-        else:
-            vers.append(value)
-
-        super(CompatibleVersionDict, self).update({key: vers})
-
-    def tolist(self):
-        thelist = []
-        for k,v in self.iteritems():
-            thelist.extend([format_pk_name(k, vt) for vt in v])
-        return thelist
-
-    def fromlist(self, pks):
-        for pk in pks:
-            if not isinstance(pk, basestring):
-                pk = str(pk)
-            name, ver = separate_fullname(pk)
-            self.__setitem__(name, ver)
-
-    def compatible(self):
-        good, bads = True, []
-        for k,v in self.iteritems():
-            if len(v) > 1:
-                bads.extend([format_pk_name(k, vt) for vt in v])
-                good = False
-        return good, bads
-
-
-class PathDict(dict):
-    def __init__(self, paths=[], *args, **kwargs):
-        super(PathDict, self).__init__(*args, **kwargs)
-        if paths:
-            for k,v in paths:
-                self.__setitem__(k,v)
-
-    def __setitem__(self, key, value):
-        if self.get(key):
-            super(PathDict, self).update({key: value+":"+self.get(key)})
-        else:
-            super(PathDict, self).update({key: value})
 
