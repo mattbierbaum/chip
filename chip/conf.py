@@ -175,7 +175,7 @@ def env_clear(env=''):
 
 shellscript = \
 """
-command -v chip-deactivate >/dev/null 2>&1 && chip_deactivate
+command -v chip-deactivate >/dev/null 2>&1 && chip-deactivate
 
 function chip-deactivate {{
     echo "Deactivating chip environment {env}..."
