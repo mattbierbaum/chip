@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+# PYTHON_ARGCOMPLETE_OK
 import sys
 import json
 import os
@@ -26,7 +27,7 @@ use:
 
     chip use myenv
     chip install base
-    chip activate base
+    chip add base
     chip export
     . chop
 
@@ -74,14 +75,14 @@ def action_uninstall(args):
     else:
         logger.info("Package %s already installed." % pk)
 
-def action_activate(args):
+def action_add(args):
     pk = packages.pkg_obj(args['package-name'])
     if pk.isinstalled():
         conf.env_put(pk)
     else:
         logger.warning("Package %s not installed, please install" % pk)
 
-def action_deactivate(args):
+def action_rm(args):
     pk = packages.pkg_obj(args['package-name'])
     if pk.isinstalled():
         conf.env_pull(pk.fullname)
@@ -126,6 +127,39 @@ def action_use(args):
 def action_search(args):
     pass
 
+def GlobalPackageCompleter(prefix, parsed_args, **kwargs):
+    if not util.VERSIONSEP in prefix:
+        pkgs = util.getpk()
+        return [pk['name'] for pk in pkgs if pk['name'].startswith(prefix)]
+    else:
+        pkgs = util.getpk()
+        pks = [
+            packages.Package(util.format_pk_name(o['name'], o['version'])) for o in pkgs
+        ]
+        return [
+            pk.fullname for pk in pks if
+                pk.fullname.startswith(prefix)
+        ]
+
+def InstalledPackageCompleter(prefix, parsed_args, **kwargs):
+    pkgs = util.getpk()
+    pks = [
+        packages.Package(util.format_pk_name(o['name'], o['version'])) for o in pkgs
+    ]
+    return [
+        pk.fullname for pk in pks if (
+            pk.isinstalled() and pk.fullname.startswith(prefix)
+        )
+    ]
+
+def ActivatePackageCompleter(prefix, parsed_args, **kwargs):
+    pks = conf.env_load()
+    pks.sort()
+    return [pk for pk in pks if pk.startswith(prefix)]
+
+def EnvListCompleter(prefix, parsed_args, **kwargs):
+    return [e for e in conf.get_env_all() if e.startswith(prefix)]
+
 #========================================================
 # main : argparse and interpreting user interaction
 #========================================================
@@ -140,24 +174,48 @@ if __name__ == "__main__":
     shared.add_argument("-v", "--versbose", action='store_true',
         help="Sets the verbosity level of the chip utility"
     )
-    shared.add_argument("package-name", type=str, nargs='?',
+
+    pk_installed = argparse.ArgumentParser(add_help=False)
+    pk_installed.add_argument("package-name", type=str, nargs='?',
         help="""Packages to match against.  Can be a short name
         such as 'kim-api' which will match the latest version,
         or a package at a version e.g. 'kim-api@1.6.3'."""
-    )
+    ).completer = InstalledPackageCompleter
+
+    pk_active = argparse.ArgumentParser(add_help=False)
+    pk_active.add_argument("package-name", type=str, nargs='?',
+        help="""Packages to match against.  Can be a short name
+        such as 'kim-api' which will match the latest version,
+        or a package at a version e.g. 'kim-api@1.6.3'."""
+    ).completer = ActivatePackageCompleter
+
+    pk_all = argparse.ArgumentParser(add_help=False)
+    pk_all.add_argument("package-name", type=str, nargs='?',
+        help="""Packages to match against.  Can be a short name
+        such as 'kim-api' which will match the latest version,
+        or a package at a version e.g. 'kim-api@1.6.3'."""
+    ).completer = GlobalPackageCompleter
+
+    pk_env = argparse.ArgumentParser(add_help=False)
+    pk_env.add_argument("package-name", type=str, nargs='?',
+        help="""Packages to match against.  Can be a short name
+        such as 'kim-api' which will match the latest version,
+        or a package at a version e.g. 'kim-api@1.6.3'."""
+    ).completer = EnvListCompleter
 
     # the sub actions that can be performed
-    parse_install = sub.add_parser(name='install', parents=[shared],
+    parse_install = sub.add_parser(name='install', parents=[shared, pk_all],
         help="install a package and its dependencies")
-    parse_uninstall = sub.add_parser(name='uninstall', parents=[shared],
+    parse_uninstall = sub.add_parser(name='uninstall',
+        parents=[shared, pk_installed],
         help="uninstall a package but not its dependencies")
 
-    parse_activate = sub.add_parser(name='activate', parents=[shared],
-        help="activate a particular package for this environment")
-    parse_deactivate = sub.add_parser(name='deactivate', parents=[shared],
-        help="deactivate a particular package")
+    parse_add = sub.add_parser(name='add', parents=[shared, pk_all],
+        help="add a particular package for this environment")
+    parse_rm = sub.add_parser(name='rm', parents=[shared, pk_active],
+        help="remove a particular package")
 
-    parse_use = sub.add_parser(name='use', parents=[shared],
+    parse_use = sub.add_parser(name='use', parents=[shared, pk_env],
         help="switch to a different chip environment")
     parse_list = sub.add_parser(name='list', parents=[shared],
         help="list the current environment as well as its packages")
@@ -173,8 +231,8 @@ if __name__ == "__main__":
     parse_upgrade = sub.add_parser(name='upgrade', parents=[shared],
         help="upgrade chip himself")
 
-    parse_activate.set_defaults(action='activate')
-    parse_deactivate.set_defaults(action='deactivate')
+    parse_add.set_defaults(action='add')
+    parse_rm.set_defaults(action='rm')
     parse_export.set_defaults(action='export')
 
     parse_use.set_defaults(action='use')
@@ -185,6 +243,7 @@ if __name__ == "__main__":
     parse_uninstall.set_defaults(action='uninstall')
     parse_update.set_defaults(action='update')
 
+    argcomplete.autocomplete(parser)
     # custom actions for each particular action
     """
     parse_install.add_argument("-s", "--skip-build", action='store_true',
@@ -212,10 +271,10 @@ if __name__ == "__main__":
     elif args.get('action') == "uninstall":
         action_uninstall(args)
 
-    elif args.get('action') == "activate":
-        action_activate(args)
-    elif args.get('action') == "deactivate":
-        action_deactivate(args)
+    elif args.get('action') == "add":
+        action_add(args)
+    elif args.get('action') == "rm":
+        action_rm(args)
     elif args.get('action') == "export":
         action_export(args)
     elif args.get('action') == "use":
