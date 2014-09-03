@@ -171,7 +171,7 @@ if __name__ == "__main__":
 
     # shared arguments between most of the actions
     shared = argparse.ArgumentParser(add_help=False)
-    shared.add_argument("-v", "--versbose", action='store_true',
+    shared.add_argument("-v", "--verbose", action='store_true',
         help="Sets the verbosity level of the chip utility"
     )
 
@@ -243,7 +243,10 @@ if __name__ == "__main__":
     parse_uninstall.set_defaults(action='uninstall')
     parse_update.set_defaults(action='update')
 
-    argcomplete.autocomplete(parser)
+    argcomplete.autocomplete(parser, exclude=[
+        '-h', '--help', '-v', '--version', '--verbose'
+    ])
+
     # custom actions for each particular action
     """
     parse_install.add_argument("-s", "--skip-build", action='store_true',
