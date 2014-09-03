@@ -20,6 +20,9 @@ def date_to_iso():
 def iso_to_date():
     return datetime.strptime("2010-06-04 21:08:12", "%Y-%m-%d %H:%M:%S")
 
+class ChipRuntimeError(Exception):
+    pass
+
 class PackageError(Exception):
     pass
 

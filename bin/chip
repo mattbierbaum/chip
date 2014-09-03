@@ -124,6 +124,9 @@ def action_export():
 def action_use(args):
     conf.env_switch(args['package-name'])
 
+def action_del(args):
+    conf.env_del(args['package-name'])
+
 def action_search(args):
     pass
 
@@ -205,24 +208,26 @@ if __name__ == "__main__":
 
     # the sub actions that can be performed
     parse_install = sub.add_parser(name='install', parents=[shared, pk_all],
-        help="install a package and its dependencies")
+        help="(GBL) install a package and its dependencies")
     parse_uninstall = sub.add_parser(name='uninstall',
         parents=[shared, pk_installed],
-        help="uninstall a package but not its dependencies")
+        help="(GBL) uninstall a package but not its dependencies")
 
     parse_add = sub.add_parser(name='add', parents=[shared, pk_all],
-        help="add a particular package for this environment")
+        help="(PKG) add a particular package for this environment")
     parse_rm = sub.add_parser(name='rm', parents=[shared, pk_active],
-        help="remove a particular package")
+        help="(PKG) remove a particular package")
+    parse_list = sub.add_parser(name='ls', parents=[shared],
+        help="(PKG) list the current env as well as its packages")
 
     parse_use = sub.add_parser(name='use', parents=[shared, pk_env],
-        help="switch to a different chip environment")
-    parse_list = sub.add_parser(name='list', parents=[shared],
-        help="list the current environment as well as its packages")
+        help="(ENV) switch to a different chip environment")
+    parse_del = sub.add_parser(name='del', parents=[shared, pk_env],
+        help="(ENV) delete a particular chip environment")
     parse_clear = sub.add_parser(name='clear', parents=[shared],
-        help="clear the current environment of all packages")
+        help="(ENV) clear the current environment of all packages")
     parse_export = sub.add_parser(name='export', parents=[shared],
-        help="prepare the chop command with the current settings")
+        help="(ENV) prepare the chop command with the current env")
 
     parse_search = sub.add_parser(name='search', parents=[shared],
         help="list the current package configuration")
@@ -236,6 +241,7 @@ if __name__ == "__main__":
     parse_export.set_defaults(action='export')
 
     parse_use.set_defaults(action='use')
+    parse_del.set_defaults(action='del')
     parse_list.set_defaults(action='list')
     parse_clear.set_defaults(action='clear')
     parse_search.set_defaults(action='search')
@@ -282,6 +288,8 @@ if __name__ == "__main__":
         action_export()
     elif args.get('action') == "use":
         action_use(args)
+    elif args.get('action') == "del":
+        action_del(args)
     elif args.get('action') == "list":
         action_list(args)
     elif args.get('action') == "clear":

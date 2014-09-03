@@ -129,6 +129,12 @@ def get_env_current():
     cf = read_status()
     return cf.get("current-env")
 
+def env_del(env=''):
+    if not env:
+        raise util.ChipRuntimeError("Must specify env to delete")
+
+    os.remove(env_path(env))
+
 def env_switch(env=''):
     env = env or 'default'
     cf = read_status()
