@@ -24,13 +24,19 @@ _DEFAULT_FIELDS = {
     "pkfile": join(_HOME_DIR, "openkim-packages", "packages.json")
 }
 
+def write_conf(cf):
+    with open(_DEFAULT_CONF_FILE, 'w') as f:
+        logger.debug("Writing conf to %s" % _DEFAULT_CONF_FILE)
+        json.dump(cf, f, indent=4)
+
 def initialize_conf_if_empty():
+    logger.debug("Initializing configuration file with defaults.")
+
     if not os.path.exists(_DEFAULT_CONF_DIR):
         subprocess.check_call(['mkdir', '-p', _DEFAULT_CONF_DIR])
 
     if not os.path.exists(_DEFAULT_CONF_FILE):
-        with open(_DEFAULT_CONF_FILE, 'w') as f:
-            json.dump(_DEFAULT_FIELDS, f, indent=4)
+        write_conf(_DEFAULT_FIELDS)
 
 def read_conf():
     initialize_conf_if_empty()

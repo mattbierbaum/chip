@@ -11,6 +11,7 @@ from chip import __version__
 from chip import conf
 from chip import util
 from chip import packages
+from chip import log
 from chip.log import createLogger
 logger = createLogger()
 cf = conf.read_conf()
@@ -127,8 +128,18 @@ def action_use(args):
 def action_del(args):
     conf.env_del(args['package-name'])
 
-def action_search(args):
-    pass
+def action_config(args):
+    cf = conf.read_conf()
+    if args.get('url'):
+        cf.update({"url": args.get('url')})
+    if args.get('home'):
+        cf.update({"home": args.get('home')})
+    if args.get('pkfile'):
+        cf.update({"pkfile": args.get('pkfile')})
+
+    conf.write_conf(cf)
+    if args.get('show'):
+        print json.dumps(conf.read_conf(), indent=4)
 
 def GlobalPackageCompleter(prefix, parsed_args, **kwargs):
     if not util.VERSIONSEP in prefix:
@@ -229,8 +240,8 @@ if __name__ == "__main__":
     parse_export = sub.add_parser(name='export', parents=[shared],
         help="(ENV) prepare the chop command with the current env")
 
-    parse_search = sub.add_parser(name='search', parents=[shared],
-        help="list the current package configuration")
+    parse_config = sub.add_parser(name='config', parents=[shared],
+        help="configure this chip installation for this user")
     parse_update = sub.add_parser(name='update', parents=[shared],
         help="grab an updated list of packages")
     parse_upgrade = sub.add_parser(name='upgrade', parents=[shared],
@@ -238,16 +249,28 @@ if __name__ == "__main__":
 
     parse_add.set_defaults(action='add')
     parse_rm.set_defaults(action='rm')
-    parse_export.set_defaults(action='export')
+    parse_list.set_defaults(action='list')
 
     parse_use.set_defaults(action='use')
     parse_del.set_defaults(action='del')
-    parse_list.set_defaults(action='list')
+    parse_export.set_defaults(action='export')
     parse_clear.set_defaults(action='clear')
-    parse_search.set_defaults(action='search')
+
+    parse_config.set_defaults(action='config')
     parse_install.set_defaults(action='install')
     parse_uninstall.set_defaults(action='uninstall')
     parse_update.set_defaults(action='update')
+
+    parse_config.add_argument("--show",
+        help="show the current chip configuration")
+    parse_config.add_argument("--url",
+        help="package list base url, defaults to pipeline.openkim.org")
+    parse_config.add_argument("--home",
+        help="package installation home, default $HOME/openkim-packages")
+    parse_config.add_argument("--pkfile",
+        help="where to store the package file or alternatively to point to "
+        "a custom local package file (instead of downloading from "
+        "the authority")
 
     argcomplete.autocomplete(parser, exclude=[
         '-h', '--help', '-v', '--version', '--verbose'
@@ -284,19 +307,20 @@ if __name__ == "__main__":
         action_add(args)
     elif args.get('action') == "rm":
         action_rm(args)
-    elif args.get('action') == "export":
-        action_export()
+    elif args.get('action') == "list":
+        action_list(args)
+
     elif args.get('action') == "use":
         action_use(args)
     elif args.get('action') == "del":
         action_del(args)
-    elif args.get('action') == "list":
-        action_list(args)
     elif args.get('action') == "clear":
         action_clear(args)
+    elif args.get('action') == "export":
+        action_export()
 
-    elif args.get('action') == "search":
-        action_search( args )
+    elif args.get('action') == "config":
+        action_config(args)
     else:
         logger.error("No command specified, see --help")
 
