@@ -141,12 +141,26 @@
     "author": "Matt Bierbaum",
     "desc": "Caching nameserver for better query performance",
     "type": "apt",
-    "version": "1.0",
+    "version": "9.8.1",
     "date": "2014-08-21",
     "requires": {},
     "data": {
         "commands": [
-            "sudo apt-get install bind9"
+            "sudo apt-get install bind9=1:9.8.1.dfsg.P1-4ubuntu0.8"
+        ]
+    }
+},
+{
+    "name": "beanstalkd",
+    "author": "Matt Bierbaum",
+    "desc": "Beanstalk queue daemon",
+    "type": "apt",
+    "version": "1.4.6",
+    "date": "2014-08-21",
+    "requires": {},
+    "data": {
+        "commands": [
+            "sudo apt-get install beanstalkd=1.4.6-3"
         ]
     }
 },
