@@ -100,12 +100,12 @@ def action_list(args):
     for pk in pks:
         print '\t', pk
 
-def action_export(args):
+def action_export():
     pks = conf.env_load()
     allpks = []
     for pk in pks:
         pk = packages.pkg_obj(pk)
-        allpks.extend([pk]+pk.dependencies())
+        allpks.extend([pk]+pk.dependencies)
 
     d = packages.CompatibleVersionDict(allpks)
     paths = []
@@ -279,7 +279,7 @@ if __name__ == "__main__":
     elif args.get('action') == "rm":
         action_rm(args)
     elif args.get('action') == "export":
-        action_export(args)
+        action_export()
     elif args.get('action') == "use":
         action_use(args)
     elif args.get('action') == "list":

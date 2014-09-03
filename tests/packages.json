@@ -291,16 +291,6 @@
     }
 },
 {
-    "name": "config-pipeline",
-    "author": "Matt Bierbaum",
-    "desc": "Configuration for the pipeline package",
-    "type": "custom",
-    "version": "1.0.0",
-    "date": "2014-08-26",
-    "requires": {},
-    "url": "git+https://github.com/mattbierbaum/openkim-pipeline-config.git"
-},
-{
     "name": "pipeline",
     "author": "Matt Bierbaum",
     "desc": "The official OpenKIM pipeline package",
@@ -315,6 +305,22 @@
         "ASE": "~= 3.6.0"
     },
     "url": "git+https://github.com/openkim/openkim-pipeline.git@4e99d9f"
+},
+{
+    "name": "pipeline-devel",
+    "author": "Matt Bierbaum",
+    "desc": "The official OpenKIM pipeline package",
+    "type": "python",
+    "version": "1.0.0",
+    "date": "2014-09-01",
+    "requires": {
+        "python-dev": ">= 2.7.3",
+        "libzmq-dev": ">= 2.1.11",
+        "mongodb": ">= 2.0",
+        "pyclj": "~= 0.2",
+        "ASE": "~= 3.6.0"
+    },
+    "url": "git+https://github.com/openkim/openkim-pipeline.git@devel"
 },
 {
     "name": "base",

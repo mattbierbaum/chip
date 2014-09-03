@@ -72,10 +72,10 @@ def wrap_install(func):
 
         self.bootstrap()
 
-        for dep in self.dependencies():
+        for dep in self.dependencies:
             dep.install()
 
-        managers = [o.active() for o in self.dependencies()]
+        managers = [o.active() for o in self.dependencies]
         with nested(*managers):
             logger.info("Installing %s ..." % self.fullname)
             func(self)
@@ -97,11 +97,11 @@ def wrap_default(action):
                     )
 
             if action == 'activate':
-                for dep in self.dependencies():
+                for dep in self.dependencies:
                     dep.activate()
                 logger.debug("Activating %s" % self.fullname)
             if action == 'deactivate' and self.isactive():
-                for dep in self.dependencies():
+                for dep in self.dependencies:
                     dep.deactivate()
                 logger.debug("Deactivating %s" % self.fullname)
 
@@ -155,7 +155,9 @@ class Package(object):
 
         self.env = {}
         self.activated = False
+        self.deps = None
 
+    def check_consistency():
         consistent, bads = self.consistent()
         if not consistent:
             raise util.PackageInconsistent(
@@ -190,17 +192,20 @@ class Package(object):
             return unpack_http_url(link, location,
                     cache, False)
 
+    @property
     def dependencies(self):
-        deps = []
-        for req, ver_req in self.requirements.iteritems():
-            pkg = pkg_obj(name=req, versionrange=ver_req, pkfile=self.pkfile)
-            deps.extend([pkg]+pkg.dependencies())
+        if not self.deps:
+            deps = []
+            for req, ver_req in self.requirements.iteritems():
+                pkg = pkg_obj(name=req, versionrange=ver_req, pkfile=self.pkfile)
+                deps.extend([pkg]+pkg.dependencies)
 
-        a = CompatibleVersionDict(deps)
-        return a.tolist()
+            a = CompatibleVersionDict(deps)
+            self.deps = a.tolist()
+        return self.deps
 
     def consistent(self):
-        dep = self.dependencies()
+        dep = self.dependencies
         a = CompatibleVersionDict(dep)
         return a.compatible()
 
@@ -274,7 +279,7 @@ class Package(object):
 
     @contextmanager
     def active(self):
-        managers = [o.active() for o in self.dependencies()]
+        managers = [o.active() for o in self.dependencies]
         with nested(*managers):
             self.activate()
             try:
