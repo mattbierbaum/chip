@@ -304,7 +304,7 @@
         "pyclj": "~= 0.2",
         "ASE": "~= 3.6.0"
     },
-    "url": "git+https://github.com/openkim/openkim-pipeline.git@4e99d9f"
+    "url": "git+https://github.com/openkim/openkim-pipeline.git@dfbafc0"
 },
 {
     "name": "pipeline-devel",

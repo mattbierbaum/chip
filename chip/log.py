@@ -5,6 +5,13 @@ import subprocess
 
 FILELEVEL = logging.DEBUG
 
+class NewlineFormatter(logging.Formatter):
+    def format(self, record):
+        rec = super(NewlineFormatter, self).format(record) 
+        if len(rec) > 79:
+            return rec[:75] + "..."
+        return rec
+
 def createLogger(path='', level=logging.INFO):
     path = path or "./chip.log"
     logger = logging.getLogger("chip")
@@ -30,14 +37,15 @@ def createLogger(path='', level=logging.INFO):
     rotfile_handler.setFormatter(file_log_formatter)
     logger.addHandler(rotfile_handler)
 
-    if os.environ.get("CHIPVERBOSE"):
-        level = logging.DEBUG
-
     #create a console logger
     console_handler = logging.StreamHandler()
     console_handler.setLevel(level)
     console_handler.setFormatter(log_formatter)
     logger.addHandler(console_handler)
+
+    if os.environ.get("CHIPVERBOSE"):
+        level = logging.DEBUG
+    setLevel(level)
 
     return logger
 
@@ -47,6 +55,13 @@ def setLevel(level=logging.INFO):
     if not logger.handlers:
         raise Exception("Logging has not been established, cannot set level")
 
+    if level == logging.DEBUG:
+        format_cls = logging.Formatter
+    else:
+        format_cls = NewlineFormatter
+
+    log_formatter = format_cls('%(name)s-%(levelname)s: %(message)s')
     for l in logger.handlers:
         if isinstance(l, logging.StreamHandler):
             l.setLevel(level)
+            l.setFormatter(log_formatter)
