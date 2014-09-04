@@ -1,4 +1,5 @@
 import os
+import sys
 import logging
 import logging.handlers
 import subprocess
@@ -38,7 +39,7 @@ def createLogger(path='', level=logging.INFO):
     logger.addHandler(rotfile_handler)
 
     #create a console logger
-    console_handler = logging.StreamHandler()
+    console_handler = logging.StreamHandler(stream=sys.stdout)
     console_handler.setLevel(level)
     console_handler.setFormatter(log_formatter)
     logger.addHandler(console_handler)
