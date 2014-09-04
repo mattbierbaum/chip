@@ -303,7 +303,7 @@
         "mongodb": ">= 2.0",
         "pyclj": "~= 0.2"
     },
-    "url": "git+https://github.com/openkim/openkim-pipeline.git@packaging"
+    "url": "git+https://github.com/openkim/openkim-pipeline.git@packages"
 },
 {
     "name": "pipeline-devel",
