@@ -387,6 +387,9 @@ class KIMAPIPackageV1(Package):
         super(KIMAPIPackageV1, self).__init__(*args, **kwargs)
 
         self.bindir = join(self.install_path, 'bin')
+        self.libdir = join(self.install_path, 'lib')
+        self.incdir = join(self.install_path, 'include/kim-api')
+
         if self.data:
             self.buildcommands = self.data['build-commands']
 
@@ -400,6 +403,15 @@ class KIMAPIPackageV1(Package):
             with open("Makefile.KIM_Config", 'w') as f:
                 f.write(cts)
 
+            with open("src/Makefile") as f:
+                cts = f.read()
+            cts = re.sub(r"\$\(LINKSONAME\)\$\(srcdir\)\/lib\$\(KIM_LIB\)\.so",
+                         "$(LINKSONAME)lib$(KIM_LIB).so", cts)
+            cts = re.sub(r"\$\(LINKSONAME\)\$\(package_dir\)\/lib\$\(KIM_LIB\)\.so",
+                         "$(LINKSONAME)lib$(KIM_LIB).so", cts)
+            with open("src/Makefile", 'w') as f:
+                f.write(cts)
+
             for c in self.buildcommands:
                 nc = c.split()
                 self.run(nc)
@@ -407,10 +419,18 @@ class KIMAPIPackageV1(Package):
     @wrap_default('activate')
     def activate(self):
         self.path_push(self.bindir, "PATH")
+        self.path_push(self.libdir, "LIBRARY_PATH")
+        self.path_push(self.libdir, "LD_LIBRARY_PATH")
+        self.path_push(self.incdir, "C_INCLUDE_PATH")
+        self.path_push(self.incdir, "CPLUS_INCLUDE_PATH")
 
     @wrap_default('deactivate')
     def deactivate(self):
         self.path_pull(self.bindir, "PATH")
+        self.path_pull(self.libdir, "LIBRARY_PATH")
+        self.path_pull(self.libdir, "LD_LIBRARY_PATH")
+        self.path_pull(self.incdir, "C_INCLUDE_PATH")
+        self.path_pull(self.incdir, "CPLUS_INCLUDE_PATH")
 
 #=============================================================================
 #=============================================================================
