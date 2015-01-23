@@ -105,6 +105,13 @@ def wrap_default(action):
                     dep.deactivate()
                 logger.debug("Deactivating %s" % self.fullname)
 
+
+            for var, path in self.env_vars.iteritems():
+                if action == 'activate':
+                    self.path_push(path, var)
+                if action == 'deactivate':
+                    self.path_pull(path, var)
+
             func(self)
 
             if action == 'activate':
@@ -154,6 +161,7 @@ class Package(object):
         self.data = self.metadata.get('data')
 
         self.env = {}
+        self.env_vars = {}
         self.activated = False
         self.deps = None
 
@@ -323,6 +331,11 @@ class PythonPackage(Package):
         self.pythonpath = join(self.install_path, 'lib/python2.7/site-packages')
         self.pythonbinpath = join(self.install_path, 'bin')
 
+        self.env_vars = {
+            "PYTHONPATH": self.pythonpath,
+            "PATH": self.pythonbinpath
+        }
+
     @wrap_install
     def install(self):
         if os.path.exists(join(self.build_path, 'setup.py')):
@@ -339,14 +352,10 @@ class PythonPackage(Package):
 
     @wrap_default('activate')
     def activate(self):
-        self.path_push(self.pythonpath, "PYTHONPATH")
-        self.path_push(self.pythonbinpath, "PATH")
         sys.path.append(self.pythonpath)
 
     @wrap_default('deactivate')
     def deactivate(self):
-        self.path_pull(self.pythonpath, "PYTHONPATH")
-        self.path_pull(self.pythonbinpath, "PATH")
         sys.path.remove(self.pythonpath)
 
 #=============================================================================
@@ -354,31 +363,18 @@ class PythonPackage(Package):
 class BinaryPackage(Package):
     def __init__(self, *args, **kwargs):
         super(BinaryPackage, self).__init__(*args, **kwargs)
+        self.env_vars = {
+            "PATH":               join(self.build_path, "bin"),
+            "LIBRARY_PATH":       join(self.build_path, "lib"),
+            "LD_LIBRARY_PATH":    join(self.build_path, "lib"),
+            "C_INCLUDE_PATH":     join(self.build_path, "include"),
+            "CPLUS_INCLUDE_PATH": join(self.build_path, "include"),
+        }
 
-        if self.data:
-            self.linkname = self.data.get('linkname')
-
-    @wrap_install
-    def install(self):
-        exe = None
-        for f in os.listdir(self.build_path):
-            full = join(self.build_path, f)
-            if os.access(full, os.X_OK):
-                exe = full
-                break
-
-        if not exe:
-            raise Exception
-
-        self.run(['ln', '-s', exe, join(self.install_path, self.linkname)])
-
-    @wrap_default('activate')
-    def activate(self):
-        self.path_push(self.install_path, "PATH")
-
-    @wrap_default('deactivate')
-    def deactivate(self):
-        self.path_pull(self.install_path, "PATH")
+class SwigPackage(BinaryPackage):
+    def __init__(self, *args, **kwargs):
+        super(SwigPackage, self).__init__(*args, **kwargs)
+        self.env_vars.update({"SWIG_LIB": join(self.build_path, "swig-lib")})
 
 #=============================================================================
 #=============================================================================
@@ -392,6 +388,14 @@ class KIMAPIPackageV1(Package):
 
         if self.data:
             self.buildcommands = self.data['build-commands']
+
+        self.env_vars = {
+            "PATH":               self.bindir,
+            "LIBRARY_PATH":       self.libdir,
+            "LD_LIBRARY_PATH":    self.libdir,
+            "C_INCLUDE_PATH":     self.incdir,
+            "CPLUS_INCLUDE_PATH": self.incdir,
+        }
 
     @wrap_install
     def install(self):
@@ -416,21 +420,6 @@ class KIMAPIPackageV1(Package):
                 nc = c.split()
                 self.run(nc)
 
-    @wrap_default('activate')
-    def activate(self):
-        self.path_push(self.bindir, "PATH")
-        self.path_push(self.libdir, "LIBRARY_PATH")
-        self.path_push(self.libdir, "LD_LIBRARY_PATH")
-        self.path_push(self.incdir, "C_INCLUDE_PATH")
-        self.path_push(self.incdir, "CPLUS_INCLUDE_PATH")
-
-    @wrap_default('deactivate')
-    def deactivate(self):
-        self.path_pull(self.bindir, "PATH")
-        self.path_pull(self.libdir, "LIBRARY_PATH")
-        self.path_pull(self.libdir, "LD_LIBRARY_PATH")
-        self.path_pull(self.incdir, "C_INCLUDE_PATH")
-        self.path_pull(self.incdir, "CPLUS_INCLUDE_PATH")
 
 #=============================================================================
 #=============================================================================
@@ -456,11 +445,14 @@ class APTPackage(Package):
 
 def pkg_obj(name, *args, **kwargs):
     typedict = {
+        # base package types available
         "meta": Package,
         "apt": APTPackage,
-        "pip": APTPackage,
         "python": PythonPackage,
         "binary": BinaryPackage,
+
+        # also some specialty ones are included
+        "swig": SwigPackage,
         'kimapi-v1': KIMAPIPackageV1,
     }
     p = Package(name=name, *args, **kwargs)

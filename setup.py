@@ -8,10 +8,12 @@ except ImportError:
 setup(
     name='chip',
     version="0.1.0",
-    description='OpenKIM package distribution utilities.',
+    description='OpenKIM package handling utilities.',
     author='Matt Bierbaum',
     author_email='mkb72@cornell.edu',
-    url='http://www.python.org/sigs/distutils-sig/',
+    url='http://openkim.org',
+    license='CDDL',
+    long_description=open("./README.md").read(),
     packages=['chip'],
     scripts=['bin/chip'],
     install_requires=[
